@@ -1,0 +1,40 @@
+import reflex as rx
+
+from rento.components.navbar import navbar
+from rento.state.auth_state import AuthState
+
+
+def login() -> rx.Component:
+    return rx.vstack(
+        navbar(),
+        rx.container(
+            rx.vstack(
+                rx.heading("Вход", size="7"),
+                rx.input(
+                    placeholder="Email",
+                    value=AuthState.email,
+                    on_change=AuthState.set_email,
+                    width="100%",
+                ),
+                rx.input(
+                    placeholder="Пароль",
+                    type="password",
+                    value=AuthState.password,
+                    on_change=AuthState.set_password,
+                    width="100%",
+                ),
+                rx.button("Войти", on_click=AuthState.login, width="100%"),
+                rx.cond(
+                    AuthState.error_message,
+                    rx.callout(AuthState.error_message, color_scheme="red"),
+                    rx.fragment(),
+                ),
+                max_width="420px",
+                width="100%",
+                spacing="3",
+                padding_y="2rem",
+            )
+        ),
+        width="100%",
+        align_items="stretch",
+    )

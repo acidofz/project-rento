@@ -1,0 +1,11 @@
+.states
+__pycache__/
+.web
+*.db
+assets/external/
+*.py[cod]
+.env
+.venv/
+.uv-python/
+frontend.zip
+backend.zip
