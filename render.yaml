@@ -3,8 +3,8 @@ services:
     name: project-rento
     runtime: python
     plan: free
-    buildCommand: python -m pip install --upgrade pip && python -m pip install .
-    startCommand: reflex run --env prod --backend-only --backend-port $PORT
+    buildCommand: uv sync --frozen
+    startCommand: uv run reflex run --env prod --backend-only --backend-port $PORT
     envVars:
       - key: SUPABASE_URL
         sync: false
