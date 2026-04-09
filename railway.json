@@ -4,7 +4,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "uv run reflex run --env prod --backend-only --backend-port $PORT",
+    "startCommand": "uv run reflex run --env prod --single-port --backend-host 0.0.0.0 --backend-port $PORT",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 5
   }
