@@ -19,7 +19,7 @@ def listing_card_with_favorite(listing) -> rx.Component:
             variant="soft",
         ),
         rx.button(
-            "Написать владельцу",
+            "Написать",
             on_click=ChatState.create_chat_with_user(listing.owner_id),
             variant="soft",
         ),
@@ -100,7 +100,10 @@ def listings() -> rx.Component:
                         spacing="4",
                         width="100%",
                     ),
-                    rx.text("Ничего не найдено."),
+                    rx.text(
+                        "Ничего не подошло. Сбросьте фильтры или измените поиск.",
+                        color=rx.color("gray", 10),
+                    ),
                 ),
                 width="100%",
                 spacing="4",

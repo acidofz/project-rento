@@ -10,8 +10,13 @@ def login() -> rx.Component:
         rx.container(
             rx.vstack(
                 rx.heading("Вход", size="7"),
+                rx.text(
+                    "Чтобы публиковать объявления и отвечать в чате.",
+                    size="2",
+                    color=rx.color("gray", 10),
+                ),
                 rx.input(
-                    placeholder="Email",
+                    placeholder="Электронная почта",
                     value=AuthState.email,
                     on_change=AuthState.set_email,
                     width="100%",
@@ -24,6 +29,12 @@ def login() -> rx.Component:
                     width="100%",
                 ),
                 rx.button("Войти", on_click=AuthState.login, width="100%"),
+                rx.link(
+                    "Нет аккаунта? Зарегистрироваться",
+                    href="/register",
+                    size="2",
+                    color=rx.color("blue", 11),
+                ),
                 rx.cond(
                     AuthState.error_message,
                     rx.callout(AuthState.error_message, color_scheme="red"),

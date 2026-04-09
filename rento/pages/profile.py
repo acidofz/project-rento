@@ -10,9 +10,9 @@ def profile() -> rx.Component:
         rx.container(
             rx.vstack(
                 rx.heading("Профиль", size="7"),
-                rx.text("Имя пользователя:"),
+                rx.text("Имя в сервисе", size="2", color=rx.color("gray", 10)),
                 rx.badge(AuthState.user_name, size="3", color_scheme="blue"),
-                rx.text("Статус:"),
+                rx.text("Вход", size="2", color=rx.color("gray", 10)),
                 rx.badge(
                     rx.cond(AuthState.is_logged_in, "Авторизован", "Гость"),
                     color_scheme=rx.cond(AuthState.is_logged_in, "green", "gray"),
@@ -21,7 +21,7 @@ def profile() -> rx.Component:
                 rx.cond(
                     AuthState.is_blocked,
                     rx.callout(
-                        "Ваш аккаунт заблокирован. Чат и публикация объявлений недоступны.",
+                        "Аккаунт заблокирован: чат и новые объявления недоступны.",
                         color_scheme="red",
                     ),
                     rx.fragment(),

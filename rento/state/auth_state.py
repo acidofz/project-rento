@@ -15,7 +15,7 @@ def _humanize_auth_error(exc: Exception, action: str) -> str:
         return "Неверный email или пароль."
     if "email not confirmed" in text:
         return "Подтвердите email в письме от Supabase и повторите вход."
-    return f"Ошибка {action} в Supabase: {exc}"
+    return f"Не удалось выполнить {action}. Проверьте данные и попробуйте снова."
 
 
 class AuthState(rx.State):

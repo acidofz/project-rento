@@ -7,7 +7,7 @@ def navbar() -> rx.Component:
     return rx.hstack(
         rx.hstack(
             rx.heading("RENTO", size="6"),
-            rx.text("Аренда без посредников", color=rx.color("gray", 10)),
+            rx.text("Прямая аренда", color=rx.color("gray", 10)),
             spacing="3",
             align="center",
         ),
@@ -27,7 +27,7 @@ def navbar() -> rx.Component:
         rx.cond(
             AuthState.is_logged_in,
             rx.hstack(
-                rx.text(f"Привет, {AuthState.user_name}"),
+                rx.text(f"Вы вошли как {AuthState.user_name}"),
                 rx.cond(
                     AuthState.is_blocked,
                     rx.badge("Аккаунт заблокирован", color_scheme="red", variant="soft"),

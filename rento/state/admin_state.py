@@ -87,8 +87,8 @@ class AdminState(rx.State):
             )
             self.error_message = ""
             self.success_message = ""
-        except Exception as exc:
-            self.error_message = f"Не удалось загрузить админ-панель: {exc}"
+        except Exception:
+            self.error_message = "Не удалось загрузить админ-панель. Обновите страницу."
 
     def delete_listing_as_admin(self, listing_id: int) -> None:
         if self._check_admin() is None:
@@ -102,8 +102,8 @@ class AdminState(rx.State):
             self.success_message = f"Объявление #{listing_id} удалено."
             self.error_message = ""
             self.load_admin_dashboard()
-        except Exception as exc:
-            self.error_message = f"Не удалось удалить объявление: {exc}"
+        except Exception:
+            self.error_message = "Не удалось удалить объявление. Попробуйте еще раз."
 
     def delete_message_as_admin(self, message_id: int) -> None:
         if self._check_admin() is None:
@@ -117,8 +117,8 @@ class AdminState(rx.State):
             self.success_message = f"Сообщение #{message_id} удалено."
             self.error_message = ""
             self.load_admin_dashboard()
-        except Exception as exc:
-            self.error_message = f"Не удалось удалить сообщение: {exc}"
+        except Exception:
+            self.error_message = "Не удалось удалить сообщение. Попробуйте еще раз."
 
     def set_user_block_status(self, user_id: str, blocked: bool) -> None:
         if self._check_admin() is None:
@@ -134,5 +134,5 @@ class AdminState(rx.State):
             )
             self.error_message = ""
             self.load_admin_dashboard()
-        except Exception as exc:
-            self.error_message = f"Не удалось изменить статус пользователя: {exc}"
+        except Exception:
+            self.error_message = "Не удалось изменить статус пользователя. Попробуйте еще раз."

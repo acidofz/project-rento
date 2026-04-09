@@ -17,7 +17,7 @@ def chat_item(chat) -> rx.Component:
                 spacing="1",
             ),
             rx.spacer(),
-            rx.button("Открыть", on_click=ChatState.select_chat(chat.id), variant="soft"),
+            rx.button("Открыть чат", on_click=ChatState.select_chat(chat.id), variant="soft"),
             width="100%",
             align="center",
         ),
@@ -44,7 +44,7 @@ def message_item(message) -> rx.Component:
 
 def quick_contact_item(contact) -> rx.Component:
     return rx.button(
-        f"Написать: {contact.label}",
+        contact.label,
         on_click=ChatState.create_chat_with_user(contact.user_id),
         variant="soft",
         width="100%",
@@ -60,18 +60,22 @@ def chats() -> rx.Component:
                     rx.heading("Чаты", size="7"),
                     rx.spacer(),
                     rx.button(
-                        "Обновить все",
+                        "Обновить",
                         on_click=[ChatState.load_chats, ChatState.load_messages, ChatState.load_quick_contacts],
                         variant="soft",
                     ),
                     width="100%",
                 ),
+                rx.text(
+                    "Новый диалог — кнопка «Написать» в объявлении или контакт ниже.",
+                    size="2",
+                    color=rx.color("gray", 10),
+                    width="100%",
+                ),
                 rx.hstack(
-                    rx.text(
-                        "Чаты создаются через быстрые контакты или кнопкой 'Написать владельцу' в объявлениях.",
-                        color=rx.color("gray", 10),
-                    ),
-                    rx.button("Обновить контакты", on_click=ChatState.load_quick_contacts, variant="soft"),
+                    rx.text("Контакты", weight="medium", size="2"),
+                    rx.spacer(),
+                    rx.button("Обновить список", on_click=ChatState.load_quick_contacts, variant="soft"),
                     width="100%",
                 ),
                 rx.vstack(
@@ -79,7 +83,11 @@ def chats() -> rx.Component:
                     rx.cond(
                         ChatState.quick_contacts,
                         rx.foreach(ChatState.quick_contacts, quick_contact_item),
-                        rx.text("Контактов пока нет."),
+                        rx.text(
+                            "Пока пусто. Откройте объявления и напишите владельцу — контакт появится здесь.",
+                            color=rx.color("gray", 10),
+                            size="2",
+                        ),
                     ),
                     width="100%",
                     align_items="stretch",
@@ -97,18 +105,18 @@ def chats() -> rx.Component:
                 ),
                 rx.grid(
                     rx.vstack(
-                        rx.heading("Список чатов", size="5"),
+                        rx.heading("Ваши диалоги", size="5"),
                         rx.foreach(ChatState.chats, chat_item),
                         spacing="2",
                         width="100%",
                         align_items="stretch",
                     ),
                     rx.vstack(
-                        rx.heading("Сообщения", size="5"),
+                        rx.heading("Переписка", size="5"),
                         rx.foreach(ChatState.messages, message_item),
                         rx.hstack(
                             rx.input(
-                                placeholder="Напишите сообщение",
+                                placeholder="Сообщение…",
                                 value=ChatState.new_message,
                                 on_change=ChatState.set_new_message,
                                 width="100%",

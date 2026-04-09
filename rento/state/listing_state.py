@@ -161,8 +161,8 @@ class ListingState(rx.State):
             self.cancel_edit()
             self.load_my_listings()
             self.load_listings()
-        except Exception as exc:
-            self.error_message = f"Не удалось обновить объявление: {exc}"
+        except Exception:
+            self.error_message = "Не удалось обновить объявление. Попробуйте еще раз."
 
     def delete_listing(self, listing_id: int) -> None:
         sb = get_supabase()
@@ -177,8 +177,8 @@ class ListingState(rx.State):
             self.error_message = ""
             self.load_my_listings()
             self.load_listings()
-        except Exception as exc:
-            self.error_message = f"Не удалось удалить объявление: {exc}"
+        except Exception:
+            self.error_message = "Не удалось удалить объявление. Попробуйте еще раз."
 
     def add_listing(self) -> None:
         if not self.title or not self.district or self.price <= 0:
@@ -218,8 +218,8 @@ class ListingState(rx.State):
             self.success_message = "Объявление опубликовано."
             self.load_listings()
             self.load_my_listings()
-        except Exception as exc:
-            self.error_message = f"Не удалось сохранить объявление: {exc}"
+        except Exception:
+            self.error_message = "Не удалось сохранить объявление. Попробуйте еще раз."
             self.success_message = ""
 
     def load_listings(self) -> None:
@@ -250,8 +250,8 @@ class ListingState(rx.State):
             ]
             self.error_message = ""
             self.load_favorites()
-        except Exception as exc:
-            self.error_message = f"Не удалось загрузить объявления: {exc}"
+        except Exception:
+            self.error_message = "Не удалось загрузить объявления. Обновите страницу."
 
     def load_my_listings(self) -> None:
         sb = get_supabase()
@@ -287,8 +287,8 @@ class ListingState(rx.State):
                 if row.get("id") is not None
             ]
             self.error_message = ""
-        except Exception as exc:
-            self.error_message = f"Не удалось загрузить ваши объявления: {exc}"
+        except Exception:
+            self.error_message = "Не удалось загрузить ваши объявления. Обновите страницу."
 
     def load_favorites(self) -> None:
         sb = get_supabase()
@@ -336,8 +336,8 @@ class ListingState(rx.State):
                 ).execute()
             self.error_message = ""
             self.load_favorites()
-        except Exception as exc:
-            self.error_message = f"Не удалось обновить избранное: {exc}"
+        except Exception:
+            self.error_message = "Не удалось обновить избранное. Попробуйте еще раз."
 
     @rx.var(cache=False)
     def is_editing(self) -> bool:

@@ -172,8 +172,8 @@ class ChatState(rx.State):
                 self.load_messages()
             self.load_quick_contacts()
             self.error_message = ""
-        except Exception as exc:
-            self.error_message = f"Не удалось загрузить чаты: {exc}"
+        except Exception:
+            self.error_message = "Не удалось загрузить чаты. Обновите страницу."
 
     def select_chat(self, chat_id: int) -> None:
         self.selected_chat_id = chat_id
@@ -223,8 +223,8 @@ class ChatState(rx.State):
                 if row.get("id") is not None
             ]
             self.error_message = ""
-        except Exception as exc:
-            self.error_message = f"Не удалось загрузить сообщения: {exc}"
+        except Exception:
+            self.error_message = "Не удалось загрузить сообщения. Обновите страницу."
 
     def create_chat(self) -> None:
         if not self.peer_user_id:
@@ -301,8 +301,8 @@ class ChatState(rx.State):
             self.selected_chat_id = chat_id
             self.load_chats()
             self.load_messages()
-        except Exception as exc:
-            self.error_message = f"Не удалось создать чат: {exc}"
+        except Exception:
+            self.error_message = "Не удалось создать чат. Попробуйте еще раз."
 
     def _find_existing_chat_id(self, current_user_id: str, peer_user_id: str) -> int:
         sb = get_supabase()
@@ -418,7 +418,7 @@ class ChatState(rx.State):
     def create_chat_with_user(self, peer_user_id: str):
         self.peer_user_id = (peer_user_id or "").strip()
         if not self.peer_user_id:
-            self.error_message = "У объявления нет owner_id для старта чата."
+            self.error_message = "У этого объявления нет контакта владельца."
             return
         self.create_chat()
         if not self.error_message and self.selected_chat_id > 0:
@@ -459,5 +459,5 @@ class ChatState(rx.State):
             self.new_message = ""
             self.error_message = ""
             self.load_messages()
-        except Exception as exc:
-            self.error_message = f"Не удалось отправить сообщение: {exc}"
+        except Exception:
+            self.error_message = "Не удалось отправить сообщение. Попробуйте еще раз."

@@ -8,16 +8,16 @@ def index() -> rx.Component:
         navbar(),
         rx.container(
             rx.vstack(
-                rx.heading("Платформа аренды жилья в Узбекистане", size="8"),
+                rx.heading("Аренда жилья без посредников", size="8"),
                 rx.text(
-                    "Ищите квартиру или сдавайте жилье напрямую, без риелторов.",
+                    "Снимайте и сдавайте напрямую — объявления, чат и избранное в одном месте.",
                     size="4",
                     color=rx.color("gray", 11),
                 ),
                 rx.hstack(
                     rx.button("Смотреть объявления", on_click=rx.redirect("/listings")),
                     rx.button(
-                        "Разместить объявление",
+                        "Подать объявление",
                         on_click=rx.redirect("/create"),
                         variant="soft",
                     ),

@@ -9,9 +9,14 @@ def create() -> rx.Component:
         navbar(),
         rx.container(
             rx.vstack(
-                rx.heading("Создать объявление", size="7"),
+                rx.heading("Новое объявление", size="7"),
+                rx.text(
+                    "Кратко опишите жильё — так откликнутся быстрее.",
+                    size="2",
+                    color=rx.color("gray", 10),
+                ),
                 rx.input(
-                    placeholder="Заголовок",
+                    placeholder="Заголовок, например: 1-комнатная у метро",
                     value=ListingState.title,
                     on_change=ListingState.set_title,
                 ),
@@ -21,14 +26,14 @@ def create() -> rx.Component:
                     on_change=ListingState.set_district,
                 ),
                 rx.input(
-                    placeholder="Количество комнат",
+                    placeholder="Комнат",
                     type="number",
                     min=1,
                     value=ListingState.rooms,
                     on_change=ListingState.set_rooms,
                 ),
                 rx.input(
-                    placeholder="Цена (сум)",
+                    placeholder="Цена в сумах в месяц",
                     type="number",
                     min=0,
                     value=ListingState.price,
