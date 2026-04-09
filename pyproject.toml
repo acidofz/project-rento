@@ -16,6 +16,6 @@ build-backend = "hatchling.build"
 
 [tool.uv]
 package = true
-required-environments = [
+environments = [
     "sys_platform == 'linux' and platform_machine == 'x86_64'",
 ]
