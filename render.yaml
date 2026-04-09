@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: project-rento
+    runtime: python
+    plan: free
+    buildCommand: python -m pip install --upgrade pip && python -m pip install .
+    startCommand: reflex run --env prod --backend-only --backend-port $PORT
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: ADMIN_USER_IDS
+        sync: false

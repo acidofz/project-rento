@@ -150,6 +150,38 @@ uv run reflex export
 - Прогнать `/health` после запуска
 - Проверить, что `/sitemap.xml` и `/robots.txt` открываются
 
+## ☁️ Деплой-конфиги (готово)
+
+В проекте уже добавлены файлы для платформ:
+- `railway.json` — настройки деплоя Railway
+- `nixpacks.toml` — явные шаги сборки и запуска
+- `Procfile` — fallback-команда запуска
+- `render.yaml` — декларативный деплой на Render
+
+### Railway
+
+1. Подключи репозиторий в Railway.
+2. Проверь, что выбран правильный branch и root (где лежат `pyproject.toml` и `rento/`).
+3. Добавь ENV:
+   - `SUPABASE_URL`
+   - `SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `ADMIN_USER_IDS`
+4. Дождись деплоя и открой `/health`.
+
+### Render
+
+1. Создай Web Service из репозитория (или Blueprint через `render.yaml`).
+2. Добавь те же ENV переменные.
+3. После деплоя проверь `/health`.
+
+## ⚙️ Файлы деплоя в репозитории
+
+- `railway.json` — явная конфигурация Railway
+- `nixpacks.toml` — команды сборки/запуска для Nixpacks
+- `Procfile` — fallback-команда запуска
+- `render.yaml` — шаблон деплоя для Render
+
 ## 📱 PWA (базовая подготовка)
 
 В проект добавлены:
