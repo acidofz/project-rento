@@ -35,6 +35,12 @@ def my_listings() -> rx.Component:
                     rx.button("Обновить", on_click=ListingState.load_my_listings, variant="soft"),
                     width="100%",
                 ),
+                rx.text(
+                    "Редактируйте или снимайте с публикации — изменения сразу видны в общем списке.",
+                    size="2",
+                    color=rx.color("gray", 10),
+                    width="100%",
+                ),
                 rx.cond(
                     ListingState.error_message,
                     rx.callout(ListingState.error_message, color_scheme="red"),
@@ -49,7 +55,7 @@ def my_listings() -> rx.Component:
                     ListingState.is_editing,
                     rx.card(
                         rx.vstack(
-                            rx.heading("Редактировать объявление", size="5"),
+                            rx.heading("Редактирование", size="5"),
                             rx.input(
                                 placeholder="Заголовок",
                                 value=ListingState.edit_title,
@@ -61,14 +67,14 @@ def my_listings() -> rx.Component:
                                 on_change=ListingState.set_edit_district,
                             ),
                             rx.input(
-                                placeholder="Количество комнат",
+                                placeholder="Комнат",
                                 type="number",
                                 min=1,
                                 value=ListingState.edit_rooms,
                                 on_change=ListingState.set_edit_rooms,
                             ),
                             rx.input(
-                                placeholder="Цена (сум)",
+                                placeholder="Цена в сумах в месяц",
                                 type="number",
                                 min=1,
                                 value=ListingState.edit_price,
@@ -76,7 +82,7 @@ def my_listings() -> rx.Component:
                             ),
                             rx.hstack(
                                 rx.button("Сохранить", on_click=ListingState.save_edit),
-                                rx.button("Отмена", on_click=ListingState.cancel_edit, variant="soft"),
+                                rx.button("Отменить", on_click=ListingState.cancel_edit, variant="soft"),
                                 spacing="2",
                             ),
                             spacing="3",
@@ -94,7 +100,19 @@ def my_listings() -> rx.Component:
                         spacing="4",
                         width="100%",
                     ),
-                    rx.text("У вас пока нет объявлений."),
+                    rx.vstack(
+                        rx.text(
+                            "Пока нет объявлений.",
+                            color=rx.color("gray", 11),
+                        ),
+                        rx.link(
+                            "Подать объявление",
+                            href="/create",
+                            color=rx.color("blue", 11),
+                        ),
+                        spacing="2",
+                        align_items="start",
+                    ),
                 ),
                 width="100%",
                 spacing="4",

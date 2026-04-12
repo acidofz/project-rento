@@ -9,7 +9,7 @@ def favorite_card(listing) -> rx.Component:
     return rx.vstack(
         listing_card(listing),
         rx.button(
-            "Убрать из избранного",
+            "Убрать",
             on_click=ListingState.toggle_favorite(listing.id),
             variant="soft",
         ),
@@ -29,6 +29,12 @@ def favorites() -> rx.Component:
                     rx.button("Обновить", on_click=ListingState.load_listings, variant="soft"),
                     width="100%",
                 ),
+                rx.text(
+                    "Сохранённые объявления — только у вас в аккаунте.",
+                    size="2",
+                    color=rx.color("gray", 10),
+                    width="100%",
+                ),
                 rx.cond(
                     ListingState.error_message,
                     rx.callout(ListingState.error_message, color_scheme="red"),
@@ -42,7 +48,19 @@ def favorites() -> rx.Component:
                         spacing="4",
                         width="100%",
                     ),
-                    rx.text("В избранном пока пусто."),
+                    rx.vstack(
+                        rx.text(
+                            "Здесь появятся объявления, которые вы добавите через «В избранное».",
+                            color=rx.color("gray", 11),
+                        ),
+                        rx.link(
+                            "К объявлениям",
+                            href="/listings",
+                            color=rx.color("blue", 11),
+                        ),
+                        spacing="2",
+                        align_items="start",
+                    ),
                 ),
                 width="100%",
                 spacing="4",

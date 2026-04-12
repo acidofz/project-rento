@@ -8,9 +8,13 @@ def health() -> rx.Component:
         navbar(),
         rx.container(
             rx.vstack(
-                rx.heading("Health Check", size="7"),
+                rx.heading("Сервис в порядке", size="7"),
                 rx.badge("OK", color_scheme="green", size="3"),
-                rx.text("Приложение запущено и роутинг работает."),
+                rx.text(
+                    "Приложение отвечает, маршруты доступны. Используйте для проверки после деплоя.",
+                    size="2",
+                    color=rx.color("gray", 10),
+                ),
                 spacing="3",
                 padding_y="2rem",
                 align_items="start",

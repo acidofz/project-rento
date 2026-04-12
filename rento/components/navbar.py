@@ -15,7 +15,7 @@ def navbar() -> rx.Component:
         rx.hstack(
             rx.link("Главная", href="/"),
             rx.link("Объявления", href="/listings"),
-            rx.link("Создать", href="/create"),
+            rx.link("Подать", href="/create"),
             rx.link("Чаты", href="/chats"),
             rx.link("Избранное", href="/favorites"),
             rx.link("Мои объявления", href="/my-listings"),

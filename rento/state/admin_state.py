@@ -26,16 +26,16 @@ class AdminState(rx.State):
         sb = get_supabase()
         if sb is None:
             self.is_admin = False
-            self.error_message = "Supabase не настроен. Проверьте .env."
+            self.error_message = "База не подключена. Проверьте переменные окружения Supabase."
             return None
         user = getattr(sb.auth.get_user(), "user", None)
         if user is None or not getattr(user, "id", None):
             self.is_admin = False
-            self.error_message = "Войдите в аккаунт администратора."
+            self.error_message = "Войдите под учётной записью администратора."
             return None
         self.is_admin = user.id in _admin_ids_from_env()
         if not self.is_admin:
-            self.error_message = "Доступ запрещен: только для администратора."
+            self.error_message = "Недостаточно прав для этой страницы."
             return None
         return user
 
@@ -45,7 +45,7 @@ class AdminState(rx.State):
             return
         sb_admin = get_supabase_admin()
         if sb_admin is None:
-            self.error_message = "Service role key не настроен для админ-действий."
+            self.error_message = "Сервисный ключ Supabase не задан — админ-режим недоступен."
             return
         try:
             self.listings_count = len(
@@ -95,7 +95,7 @@ class AdminState(rx.State):
             return
         sb_admin = get_supabase_admin()
         if sb_admin is None:
-            self.error_message = "Service role key не настроен для админ-действий."
+            self.error_message = "Сервисный ключ Supabase не задан — админ-режим недоступен."
             return
         try:
             sb_admin.table("listings").delete().eq("id", listing_id).execute()
@@ -110,7 +110,7 @@ class AdminState(rx.State):
             return
         sb_admin = get_supabase_admin()
         if sb_admin is None:
-            self.error_message = "Service role key не настроен для админ-действий."
+            self.error_message = "Сервисный ключ Supabase не задан — админ-режим недоступен."
             return
         try:
             sb_admin.table("messages").delete().eq("id", message_id).execute()
@@ -125,7 +125,7 @@ class AdminState(rx.State):
             return
         sb_admin = get_supabase_admin()
         if sb_admin is None:
-            self.error_message = "Service role key не настроен для админ-действий."
+            self.error_message = "Сервисный ключ Supabase не задан — админ-режим недоступен."
             return
         try:
             sb_admin.table("profiles").update({"is_blocked": blocked}).eq("id", user_id).execute()

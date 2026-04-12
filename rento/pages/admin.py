@@ -24,7 +24,7 @@ def listing_row(item) -> rx.Component:
 def message_row(item) -> rx.Component:
     return rx.hstack(
         rx.text(f"#{item['id']}"),
-        rx.text(f"chat:{item['chat_id']}", color=rx.color("gray", 10)),
+        rx.text(f"Чат №{item['chat_id']}", color=rx.color("gray", 10), size="1"),
         rx.text(item["body"], max_width="420px"),
         rx.spacer(),
         rx.button(
@@ -81,6 +81,12 @@ def admin() -> rx.Component:
                     rx.heading("Админ-панель", size="7"),
                     rx.spacer(),
                     rx.button("Обновить", on_click=AdminState.load_admin_dashboard, variant="soft"),
+                    width="100%",
+                ),
+                rx.text(
+                    "Сводка, модерация объявлений и сообщений, статусы пользователей.",
+                    size="2",
+                    color=rx.color("gray", 10),
                     width="100%",
                 ),
                 rx.cond(
@@ -162,7 +168,10 @@ def admin() -> rx.Component:
                         spacing="4",
                         width="100%",
                     ),
-                    rx.text("Нет доступа к админ-панели."),
+                    rx.text(
+                        "Эта страница только для администраторов.",
+                        color=rx.color("gray", 11),
+                    ),
                 ),
                 spacing="4",
                 width="100%",
