@@ -80,6 +80,50 @@ def my_listings() -> rx.Component:
                                 value=ListingState.edit_price,
                                 on_change=ListingState.set_edit_price,
                             ),
+                            rx.text(
+                                "Обложка",
+                                size="2",
+                                color=rx.color("gray", 10),
+                            ),
+                            rx.upload(
+                                rx.text(
+                                    "Заменить обложку — перетащите или выберите файл",
+                                    size="2",
+                                    color=rx.color("gray", 11),
+                                ),
+                                id="listing-photo-edit",
+                                multiple=False,
+                                max_size=5_000_000,
+                                accept={
+                                    "image/jpeg": [".jpg", ".jpeg"],
+                                    "image/png": [".png"],
+                                    "image/webp": [".webp"],
+                                },
+                                on_drop=ListingState.upload_edit_photo,
+                                padding="1.25rem",
+                            ),
+                            rx.cond(
+                                ListingState.edit_image_url != "",
+                                rx.vstack(
+                                    rx.image(
+                                        src=ListingState.edit_image_url,
+                                        max_height="200px",
+                                        width="100%",
+                                        object_fit="cover",
+                                        border_radius="md",
+                                        alt="Текущая обложка",
+                                    ),
+                                    rx.button(
+                                        "Убрать фото",
+                                        variant="soft",
+                                        on_click=ListingState.clear_edit_photo,
+                                    ),
+                                    spacing="2",
+                                    align_items="start",
+                                    width="100%",
+                                ),
+                                rx.fragment(),
+                            ),
                             rx.hstack(
                                 rx.button("Сохранить", on_click=ListingState.save_edit),
                                 rx.button("Отменить", on_click=ListingState.cancel_edit, variant="soft"),

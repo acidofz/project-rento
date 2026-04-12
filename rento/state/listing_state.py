@@ -1,7 +1,28 @@
+import uuid
+from pathlib import Path
+from typing import Any
+
 from pydantic import BaseModel
 import reflex as rx
 
 from rento.supabase_client import get_supabase
+
+LISTING_IMAGES_BUCKET = "listing-images"
+_ALLOWED_IMAGE_EXT = {".jpg", ".jpeg", ".png", ".webp"}
+
+
+def _content_type_for_ext(ext: str) -> str:
+    if ext in (".jpg", ".jpeg"):
+        return "image/jpeg"
+    if ext == ".png":
+        return "image/png"
+    return "image/webp"
+
+
+async def _read_upload_bytes(upload: rx.UploadFile) -> bytes:
+    if upload.path is not None:
+        return Path(upload.path).read_bytes()
+    return await upload.read()
 
 
 class Listing(BaseModel):
@@ -11,14 +32,29 @@ class Listing(BaseModel):
     rooms: int
     price: int
     owner_id: str = ""
+    image_url: str = ""
 
 
 class ListingState(rx.State):
     """Listings state backed by Supabase table `listings`."""
 
     listings: list[Listing] = [
-        Listing(id=1, title="Уютная 1-комнатная квартира", district="Юнусабад", rooms=1, price=3500000),
-        Listing(id=2, title="2-комнатная рядом с метро", district="Чиланзар", rooms=2, price=4800000),
+        Listing(
+            id=1,
+            title="Уютная 1-комнатная квартира",
+            district="Юнусабад",
+            rooms=1,
+            price=3500000,
+            image_url="",
+        ),
+        Listing(
+            id=2,
+            title="2-комнатная рядом с метро",
+            district="Чиланзар",
+            rooms=2,
+            price=4800000,
+            image_url="",
+        ),
     ]
     title: str = ""
     district: str = ""
@@ -40,6 +76,30 @@ class ListingState(rx.State):
     edit_district: str = ""
     edit_rooms: int = 1
     edit_price: int = 0
+    pending_image_url: str = ""
+    pending_image_name: str = ""
+    edit_image_url: str = ""
+    edit_image_url_before_upload: str = ""
+
+    def _upload_listing_image_bytes(
+        self,
+        sb: Any,
+        user_id: str,
+        data: bytes,
+        original_name: str | None,
+    ) -> str:
+        raw = (original_name or "photo.jpg").rsplit(".", 1)
+        ext = f".{raw[-1].lower()}" if len(raw) > 1 else ".jpg"
+        if ext not in _ALLOWED_IMAGE_EXT:
+            ext = ".jpg"
+        path = f"{user_id}/{uuid.uuid4().hex}{ext}"
+        content_type = _content_type_for_ext(ext)
+        sb.storage.from_(LISTING_IMAGES_BUCKET).upload(
+            path,
+            data,
+            file_options={"content-type": content_type, "upsert": "true"},
+        )
+        return sb.storage.from_(LISTING_IMAGES_BUCKET).get_public_url(path)
 
     def _is_current_user_blocked(self) -> bool:
         sb = get_supabase()
@@ -128,6 +188,8 @@ class ListingState(rx.State):
         self.edit_district = target.district
         self.edit_rooms = target.rooms
         self.edit_price = target.price
+        self.edit_image_url = target.image_url or ""
+        self.edit_image_url_before_upload = self.edit_image_url
         self.error_message = ""
 
     def cancel_edit(self) -> None:
@@ -136,6 +198,64 @@ class ListingState(rx.State):
         self.edit_district = ""
         self.edit_rooms = 1
         self.edit_price = 0
+        self.edit_image_url = ""
+        self.edit_image_url_before_upload = ""
+
+    async def upload_create_photo(self, files: list[rx.UploadFile]) -> None:
+        self.error_message = ""
+        if not files:
+            return
+        sb = get_supabase()
+        if sb is None:
+            self.error_message = "Supabase не настроен. Проверьте .env."
+            return
+        user = getattr(sb.auth.get_user(), "user", None)
+        if user is None or not getattr(user, "id", None):
+            self.error_message = "Войдите в аккаунт, чтобы загрузить фото."
+            return
+        try:
+            data = await _read_upload_bytes(files[0])
+            if len(data) > 5_000_000:
+                self.error_message = "Файл больше 5 МБ. Выберите другое изображение."
+                return
+            name = files[0].filename or "photo.jpg"
+            url = self._upload_listing_image_bytes(sb, str(user.id), data, name)
+            self.pending_image_url = url
+            self.pending_image_name = name
+        except Exception:
+            self.error_message = "Не удалось загрузить фото. Проверьте формат (JPG, PNG, WebP)."
+
+    async def upload_edit_photo(self, files: list[rx.UploadFile]) -> None:
+        self.error_message = ""
+        if not files or self.edit_listing_id <= 0:
+            return
+        sb = get_supabase()
+        if sb is None:
+            self.error_message = "Supabase не настроен. Проверьте .env."
+            return
+        user = getattr(sb.auth.get_user(), "user", None)
+        if user is None or not getattr(user, "id", None):
+            self.error_message = "Войдите в аккаунт, чтобы загрузить фото."
+            return
+        try:
+            data = await _read_upload_bytes(files[0])
+            if len(data) > 5_000_000:
+                self.error_message = "Файл больше 5 МБ. Выберите другое изображение."
+                return
+            name = files[0].filename or "photo.jpg"
+            url = self._upload_listing_image_bytes(sb, str(user.id), data, name)
+            self.edit_image_url = url
+        except Exception:
+            self.error_message = "Не удалось загрузить фото. Проверьте формат (JPG, PNG, WebP)."
+
+    def clear_create_photo(self):
+        self.pending_image_url = ""
+        self.pending_image_name = ""
+        return rx.clear_selected_files("listing-photo-create")
+
+    def clear_edit_photo(self):
+        self.edit_image_url = ""
+        return rx.clear_selected_files("listing-photo-edit")
 
     def save_edit(self) -> None:
         if self.edit_listing_id <= 0:
@@ -154,6 +274,7 @@ class ListingState(rx.State):
                     "district": self.edit_district,
                     "rooms": self.edit_rooms,
                     "price": self.edit_price,
+                    "image_url": self.edit_image_url or None,
                 }
             ).eq("id", self.edit_listing_id).execute()
             self.success_message = "Объявление обновлено."
@@ -161,6 +282,7 @@ class ListingState(rx.State):
             self.cancel_edit()
             self.load_my_listings()
             self.load_listings()
+            return rx.clear_selected_files("listing-photo-edit")
         except Exception:
             self.error_message = "Не удалось обновить объявление. Попробуйте еще раз."
 
@@ -201,23 +323,27 @@ class ListingState(rx.State):
                 self.error_message = "Ваш аккаунт заблокирован. Публикация объявлений недоступна."
                 self.success_message = ""
                 return
-            sb.table("listings").insert(
-                {
-                    "title": self.title,
-                    "district": self.district,
-                    "rooms": self.rooms,
-                    "price": self.price,
-                    "owner_id": user.id,
-                }
-            ).execute()
+            row: dict[str, Any] = {
+                "title": self.title,
+                "district": self.district,
+                "rooms": self.rooms,
+                "price": self.price,
+                "owner_id": user.id,
+            }
+            if self.pending_image_url:
+                row["image_url"] = self.pending_image_url
+            sb.table("listings").insert(row).execute()
             self.title = ""
             self.district = ""
             self.rooms = 1
             self.price = 0
+            self.pending_image_url = ""
+            self.pending_image_name = ""
             self.error_message = ""
             self.success_message = "Объявление опубликовано."
             self.load_listings()
             self.load_my_listings()
+            return rx.clear_selected_files("listing-photo-create")
         except Exception:
             self.error_message = "Не удалось сохранить объявление. Попробуйте еще раз."
             self.success_message = ""
@@ -231,7 +357,7 @@ class ListingState(rx.State):
         try:
             response = (
                 sb.table("listings")
-                .select("id,title,district,rooms,price,owner_id")
+                .select("id,title,district,rooms,price,owner_id,image_url")
                 .order("id", desc=True)
                 .execute()
             )
@@ -244,6 +370,7 @@ class ListingState(rx.State):
                     rooms=int(row.get("rooms", 1) or 1),
                     price=int(row.get("price", 0) or 0),
                     owner_id=str(row.get("owner_id", "") or ""),
+                    image_url=str(row.get("image_url") or ""),
                 )
                 for row in rows
                 if row.get("id") is not None
@@ -268,7 +395,7 @@ class ListingState(rx.State):
                 return
             response = (
                 sb.table("listings")
-                .select("id,title,district,rooms,price,owner_id")
+                .select("id,title,district,rooms,price,owner_id,image_url")
                 .eq("owner_id", user.id)
                 .order("id", desc=True)
                 .execute()
@@ -282,6 +409,7 @@ class ListingState(rx.State):
                     rooms=int(row.get("rooms", 1) or 1),
                     price=int(row.get("price", 0) or 0),
                     owner_id=str(row.get("owner_id", "") or ""),
+                    image_url=str(row.get("image_url") or ""),
                 )
                 for row in rows
                 if row.get("id") is not None

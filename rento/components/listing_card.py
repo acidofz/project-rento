@@ -7,6 +7,28 @@ from rento.utils.helpers import format_price_uzs
 def listing_card(listing: Listing) -> rx.Component:
     return rx.card(
         rx.vstack(
+            rx.cond(
+                listing.image_url != "",
+                rx.image(
+                    src=listing.image_url,
+                    width="100%",
+                    height="140px",
+                    object_fit="cover",
+                    alt=listing.title,
+                    border_radius="md",
+                ),
+                rx.box(
+                    rx.center(
+                        rx.text("Нет фото", size="1", color=rx.color("gray", 9)),
+                        width="100%",
+                        height="100%",
+                    ),
+                    width="100%",
+                    height="140px",
+                    background=rx.color("gray", 3),
+                    border_radius="md",
+                ),
+            ),
             rx.heading(listing.title, size="4"),
             rx.text(
                 f"{listing.district} · {listing.rooms} комн.",

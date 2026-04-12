@@ -39,6 +39,50 @@ def create() -> rx.Component:
                     value=ListingState.price,
                     on_change=ListingState.set_price,
                 ),
+                rx.text(
+                    "Обложка (необязательно)",
+                    size="2",
+                    color=rx.color("gray", 10),
+                ),
+                rx.upload(
+                    rx.text(
+                        "Перетащите фото сюда или нажмите для выбора (до 5 МБ)",
+                        size="2",
+                        color=rx.color("gray", 11),
+                    ),
+                    id="listing-photo-create",
+                    multiple=False,
+                    max_size=5_000_000,
+                    accept={
+                        "image/jpeg": [".jpg", ".jpeg"],
+                        "image/png": [".png"],
+                        "image/webp": [".webp"],
+                    },
+                    on_drop=ListingState.upload_create_photo,
+                    padding="1.25rem",
+                ),
+                rx.cond(
+                    ListingState.pending_image_url != "",
+                    rx.vstack(
+                        rx.image(
+                            src=ListingState.pending_image_url,
+                            max_height="200px",
+                            width="100%",
+                            object_fit="cover",
+                            border_radius="md",
+                            alt="Превью обложки",
+                        ),
+                        rx.button(
+                            "Убрать фото",
+                            variant="soft",
+                            on_click=ListingState.clear_create_photo,
+                        ),
+                        spacing="2",
+                        align_items="start",
+                        width="100%",
+                    ),
+                    rx.fragment(),
+                ),
                 rx.button("Опубликовать", on_click=ListingState.add_listing),
                 rx.cond(
                     ListingState.success_message,

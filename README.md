@@ -52,6 +52,7 @@ P2P-платформа для прямой аренды жилья в Ташке
   - создание, редактирование, удаление
   - список, фильтры, сортировка
   - мои объявления
+  - обложка (одно фото на объявление): Supabase Storage, бакет `listing-images`, путь `{user_id}/...`; в БД поле `listings.image_url` (см. `supabase_schema.sql`)
 - Избранное объявлений
 - Чат:
   - создание чатов
@@ -131,7 +132,7 @@ uv sync
 - `SUPABASE_SERVICE_ROLE_KEY` (для админ-функций)
 - `ADMIN_USER_IDS` (UUID админов через запятую)
 
-3. Применить SQL-схему в Supabase SQL Editor:
+3. Применить SQL-схему в Supabase SQL Editor (включая колонку `image_url`, бакет `listing-images` и политики Storage):
 
 ```sql
 -- Выполнить содержимое файла:
