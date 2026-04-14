@@ -4,6 +4,7 @@ from typing import Any
 
 from pydantic import BaseModel
 import reflex as rx
+from storage3.exceptions import StorageApiError
 
 from rento.supabase_client import get_supabase
 
@@ -19,9 +20,55 @@ def _content_type_for_ext(ext: str) -> str:
     return "image/webp"
 
 
+def _ensure_supabase_storage_uses_current_jwt(sb: Any) -> None:
+    """Recreate the Storage client so requests use the latest Authorization header.
+
+    The underlying httpx client snapshots headers at construction; if Storage was
+    first touched before login, uploads would still use the anon key and RLS
+    would reject them.
+    """
+    try:
+        session = sb.auth.get_session()
+    except Exception:
+        session = None
+    if session is None or not getattr(session, "access_token", None):
+        return
+    auth_header = f"Bearer {session.access_token}"
+    sb.options.headers["Authorization"] = auth_header
+    if getattr(sb.auth, "_headers", None) is not None:
+        sb.auth._headers["Authorization"] = auth_header
+    sb._storage = None
+
+
+def _humanize_storage_upload_error(exc: Exception) -> str:
+    if isinstance(exc, StorageApiError):
+        msg = (exc.message or "").lower()
+        code = str(exc.code or "").lower()
+        status = int(exc.status) if str(exc.status).isdigit() else 0
+        if status in (401, 403) or "jwt" in msg or "unauthorized" in msg:
+            return (
+                "Сессия устарела или нет прав на загрузку. "
+                "Выйдите из аккаунта и войдите снова, затем повторите загрузку."
+            )
+        if "row-level security" in msg or "rls" in msg or "policy" in msg:
+            return (
+                "Отказ хранилища (политики доступа). "
+                "Проверьте, что в Supabase выполнен актуальный блок Storage из supabase_schema.sql."
+            )
+        if "bucket" in msg and ("not found" in msg or "does not exist" in msg):
+            return "Бакет listing-images не найден. Создайте его в Supabase (см. supabase_schema.sql)."
+        if exc.message:
+            return f"Не удалось загрузить фото: {exc.message}"
+    text = str(exc).strip()
+    if text:
+        return f"Не удалось загрузить фото: {text[:200]}"
+    return "Не удалось загрузить фото. Попробуйте ещё раз или выберите другой файл."
+
+
 async def _read_upload_bytes(upload: rx.UploadFile) -> bytes:
     if upload.path is not None:
         return Path(upload.path).read_bytes()
+    await upload.seek(0)
     return await upload.read()
 
 
@@ -94,6 +141,7 @@ class ListingState(rx.State):
             ext = ".jpg"
         path = f"{user_id}/{uuid.uuid4().hex}{ext}"
         content_type = _content_type_for_ext(ext)
+        _ensure_supabase_storage_uses_current_jwt(sb)
         sb.storage.from_(LISTING_IMAGES_BUCKET).upload(
             path,
             data,
@@ -222,8 +270,8 @@ class ListingState(rx.State):
             url = self._upload_listing_image_bytes(sb, str(user.id), data, name)
             self.pending_image_url = url
             self.pending_image_name = name
-        except Exception:
-            self.error_message = "Не удалось загрузить фото. Проверьте формат (JPG, PNG, WebP)."
+        except Exception as exc:
+            self.error_message = _humanize_storage_upload_error(exc)
 
     async def upload_edit_photo(self, files: list[rx.UploadFile]) -> None:
         self.error_message = ""
@@ -245,8 +293,8 @@ class ListingState(rx.State):
             name = files[0].filename or "photo.jpg"
             url = self._upload_listing_image_bytes(sb, str(user.id), data, name)
             self.edit_image_url = url
-        except Exception:
-            self.error_message = "Не удалось загрузить фото. Проверьте формат (JPG, PNG, WebP)."
+        except Exception as exc:
+            self.error_message = _humanize_storage_upload_error(exc)
 
     def clear_create_photo(self):
         self.pending_image_url = ""
