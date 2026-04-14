@@ -1,17 +1,12 @@
 [phases.setup]
-# Node is required for `reflex export` (Vite/npm). Without a build phase, Reflex
-# recompiles `.web` on every container start — slow boots and deploy timeouts.
-nixPkgs = ["...", "nodejs_22"]
+# Явный список: `["...", "nodejs_22"]` на Railway убрал `uv` из PATH → `uv: command not found`.
+# Node нужен для `reflex export` (сборка фронта в образе, без этого Reflex собирает `.web` при каждом старте).
+nixPkgs = ["python312", "uv", "unzip", "nodejs_22"]
 
 [phases.install]
 cmds = [
-  "uv sync --frozen"
-]
-
-[phases.build]
-dependsOn = ["install"]
-cmds = [
-  "uv run reflex export --no-zip --env prod"
+  "uv sync --frozen",
+  "uv run reflex export --no-zip --env prod",
 ]
 
 [start]
