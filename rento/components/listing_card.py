@@ -29,7 +29,12 @@ def listing_card(listing: Listing) -> rx.Component:
                     border_radius="md",
                 ),
             ),
-            rx.heading(listing.title, size="4"),
+            rx.link(
+                rx.heading(listing.title, size="4"),
+                href="/listing/" + listing.id.to_string(),
+                color="inherit",
+                underline="hover",
+            ),
             rx.text(
                 f"{listing.district} · {listing.rooms} комн.",
                 color=rx.color("gray", 11),

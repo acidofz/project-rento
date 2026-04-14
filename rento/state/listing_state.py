@@ -130,6 +130,59 @@ class ListingState(rx.State):
     pending_image_name: str = ""
     edit_image_url: str = ""
     edit_image_url_before_upload: str = ""
+    detail_id: int = 0
+    detail_title: str = ""
+    detail_district: str = ""
+    detail_rooms: int = 1
+    detail_price: int = 0
+    detail_owner_id: str = ""
+    detail_image_url: str = ""
+
+    def _clear_listing_detail(self) -> None:
+        self.detail_id = 0
+        self.detail_title = ""
+        self.detail_district = ""
+        self.detail_rooms = 1
+        self.detail_price = 0
+        self.detail_owner_id = ""
+        self.detail_image_url = ""
+
+    def load_listing_detail(self) -> None:
+        """Load one listing for `/listing/[listing_id]` from router params."""
+        self.error_message = ""
+        raw = (self.router.page.params.get("listing_id") or "").strip()
+        if not raw.isdigit():
+            self._clear_listing_detail()
+            return
+        listing_id = int(raw)
+        sb = get_supabase()
+        if sb is None:
+            self._clear_listing_detail()
+            self.error_message = "Supabase не настроен. Проверьте .env."
+            return
+        try:
+            response = (
+                sb.table("listings")
+                .select("id,title,district,rooms,price,owner_id,image_url")
+                .eq("id", listing_id)
+                .limit(1)
+                .execute()
+            )
+            rows = getattr(response, "data", []) or []
+            if not rows:
+                self._clear_listing_detail()
+                return
+            row = rows[0]
+            self.detail_id = int(row.get("id", 0))
+            self.detail_title = str(row.get("title", "") or "")
+            self.detail_district = str(row.get("district", "") or "")
+            self.detail_rooms = int(row.get("rooms", 1) or 1)
+            self.detail_price = int(row.get("price", 0) or 0)
+            self.detail_owner_id = str(row.get("owner_id", "") or "")
+            self.detail_image_url = str(row.get("image_url") or "")
+        except Exception:
+            self._clear_listing_detail()
+            self.error_message = "Не удалось загрузить объявление."
 
     def _upload_listing_image_bytes(
         self,

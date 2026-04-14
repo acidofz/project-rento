@@ -6,6 +6,7 @@ from rento.pages.chats import chats
 from rento.pages.favorites import favorites
 from rento.pages.health import health
 from rento.pages.index import index
+from rento.pages.listing_detail import listing_detail
 from rento.pages.listings import listings
 from rento.pages.login import login
 from rento.pages.my_listings import my_listings
@@ -47,6 +48,16 @@ app.add_page(
     route="/listings",
     title="Объявления",
     on_load=[AuthState.load_current_user_status, ListingState.load_listings],
+)
+app.add_page(
+    listing_detail,
+    route="/listing/[listing_id]",
+    title="Объявление",
+    on_load=[
+        AuthState.load_current_user_status,
+        ListingState.load_listings,
+        ListingState.load_listing_detail,
+    ],
 )
 app.add_page(
     create,
