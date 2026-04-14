@@ -3,7 +3,7 @@ services:
     name: project-rento
     runtime: python
     plan: free
-    buildCommand: uv sync --frozen
+    buildCommand: uv sync --frozen && uv run reflex export --no-zip --env prod
     startCommand: uv run reflex run --env prod --single-port --frontend-port $PORT --backend-host 0.0.0.0 --backend-port $PORT
     envVars:
       - key: SUPABASE_URL

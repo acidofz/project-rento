@@ -1,9 +1,17 @@
 [phases.setup]
-nixPkgs = ["python312", "uv", "unzip"]
+# Node is required for `reflex export` (Vite/npm). Without a build phase, Reflex
+# recompiles `.web` on every container start — slow boots and deploy timeouts.
+nixPkgs = ["...", "nodejs_22"]
 
 [phases.install]
 cmds = [
   "uv sync --frozen"
+]
+
+[phases.build]
+dependsOn = ["install"]
+cmds = [
+  "uv run reflex export --no-zip --env prod"
 ]
 
 [start]

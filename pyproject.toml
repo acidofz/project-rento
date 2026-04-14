@@ -5,7 +5,7 @@ description = "RENTO - p2p rental platform built with Reflex"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "reflex>=0.6.8",
+    "reflex>=0.8.28,<0.9",
     "supabase>=2.15.1",
     "python-dotenv>=1.0.1",
 ]
