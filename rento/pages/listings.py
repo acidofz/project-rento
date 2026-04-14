@@ -37,6 +37,7 @@ def listings() -> rx.Component:
                     rx.heading("Объявления", size="7"),
                     rx.spacer(),
                     rx.button("Обновить", on_click=ListingState.load_listings, variant="soft"),
+                    rx.button("Карта", on_click=rx.redirect("/map"), variant="soft"),
                     rx.button("Сбросить фильтры", on_click=ListingState.reset_filters, variant="soft"),
                     rx.select(
                         ["newest", "price_asc", "price_desc", "rooms_desc"],

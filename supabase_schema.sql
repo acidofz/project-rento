@@ -262,6 +262,10 @@ with check (
 -- Listing cover image (public URL in this column)
 alter table public.listings add column if not exists image_url text;
 
+-- Map markers (WGS84). Optional: both null or both set from the app.
+alter table public.listings add column if not exists latitude double precision;
+alter table public.listings add column if not exists longitude double precision;
+
 -- Storage: public bucket for listing photos (path: {user_id}/{filename})
 insert into storage.buckets (id, name, public)
 values ('listing-images', 'listing-images', true)

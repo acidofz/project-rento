@@ -40,6 +40,26 @@ def create() -> rx.Component:
                     on_change=ListingState.set_price,
                 ),
                 rx.text(
+                    "Точка на карте (необязательно)",
+                    size="2",
+                    color=rx.color("gray", 10),
+                ),
+                rx.hstack(
+                    rx.input(
+                        placeholder="Широта, напр. 41.31",
+                        value=ListingState.create_latitude,
+                        on_change=ListingState.set_create_latitude,
+                    ),
+                    rx.input(
+                        placeholder="Долгота, напр. 69.28",
+                        value=ListingState.create_longitude,
+                        on_change=ListingState.set_create_longitude,
+                    ),
+                    spacing="2",
+                    width="100%",
+                    align_items="stretch",
+                ),
+                rx.text(
                     "Обложка (необязательно)",
                     size="2",
                     color=rx.color("gray", 10),

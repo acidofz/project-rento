@@ -81,6 +81,26 @@ def my_listings() -> rx.Component:
                                 on_change=ListingState.set_edit_price,
                             ),
                             rx.text(
+                                "Точка на карте",
+                                size="2",
+                                color=rx.color("gray", 10),
+                            ),
+                            rx.hstack(
+                                rx.input(
+                                    placeholder="Широта",
+                                    value=ListingState.edit_latitude,
+                                    on_change=ListingState.set_edit_latitude,
+                                ),
+                                rx.input(
+                                    placeholder="Долгота",
+                                    value=ListingState.edit_longitude,
+                                    on_change=ListingState.set_edit_longitude,
+                                ),
+                                spacing="2",
+                                width="100%",
+                                align_items="stretch",
+                            ),
+                            rx.text(
                                 "Обложка",
                                 size="2",
                                 color=rx.color("gray", 10),

@@ -67,6 +67,16 @@ def listing_detail() -> rx.Component:
                                 size="3",
                                 variant="soft",
                             ),
+                            rx.cond(
+                                ListingState.detail_has_location,
+                                rx.link(
+                                    "Показать на карте",
+                                    href="/map",
+                                    size="2",
+                                    color=rx.color("blue", 11),
+                                ),
+                                rx.fragment(),
+                            ),
                             rx.hstack(
                                 rx.button(
                                     rx.cond(

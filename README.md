@@ -53,6 +53,7 @@ P2P-платформа для прямой аренды жилья в Ташке
   - список, фильтры, сортировка
   - мои объявления
   - страница объявления `/listing/[id]` (ссылка с заголовка в карточке)
+  - карта `/map` (Leaflet + OSM): маркеры у объявлений с заполненными `latitude` / `longitude` в БД
   - обложка (одно фото на объявление): Supabase Storage, бакет `listing-images`, путь `{user_id}/...`; в БД поле `listings.image_url` (см. `supabase_schema.sql`)
 - Избранное объявлений
 - Чат:
@@ -97,6 +98,7 @@ project-rento/
 │   │   ├── health.py
 │   │   ├── index.py
 │   │   ├── listing_detail.py
+│   │   ├── map_page.py
 │   │   ├── listings.py
 │   │   ├── login.py
 │   │   ├── my_listings.py

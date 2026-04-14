@@ -1,3 +1,4 @@
+import json
 import uuid
 from pathlib import Path
 from typing import Any
@@ -7,6 +8,7 @@ import reflex as rx
 from storage3.exceptions import StorageApiError
 
 from rento.supabase_client import get_supabase
+from rento.utils.helpers import format_price_uzs
 
 LISTING_IMAGES_BUCKET = "listing-images"
 _ALLOWED_IMAGE_EXT = {".jpg", ".jpeg", ".png", ".webp"}
@@ -65,6 +67,33 @@ def _humanize_storage_upload_error(exc: Exception) -> str:
     return "Не удалось загрузить фото. Попробуйте ещё раз или выберите другой файл."
 
 
+def _optional_lat_lng_from_form(lat_s: str, lng_s: str) -> tuple[float | None, float | None] | str:
+    """Return (lat, lng) or (None, None) if empty; otherwise an error message string."""
+    a = (lat_s or "").strip().replace(",", ".")
+    b = (lng_s or "").strip().replace(",", ".")
+    if not a and not b:
+        return (None, None)
+    if not a or not b:
+        return "Укажите и широту, и долготу, или оставьте оба поля пустыми."
+    try:
+        lat = float(a)
+        lng = float(b)
+    except ValueError:
+        return "Широта и долгота должны быть числами (например 41.31 и 69.28)."
+    if not (40.8 <= lat <= 42.2 and 68.0 <= lng <= 70.5):
+        return "Координаты вне допустимого региона (ожидается территория вокруг Ташкента)."
+    return (lat, lng)
+
+
+def _row_float_or_none(value: Any) -> float | None:
+    if value is None:
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
 async def _read_upload_bytes(upload: rx.UploadFile) -> bytes:
     # Reflex may set path to the original filename only, not a temp path — then Path().read_bytes() fails.
     if upload.path is not None:
@@ -83,6 +112,8 @@ class Listing(BaseModel):
     price: int
     owner_id: str = ""
     image_url: str = ""
+    latitude: float | None = None
+    longitude: float | None = None
 
 
 class ListingState(rx.State):
@@ -96,6 +127,8 @@ class ListingState(rx.State):
             rooms=1,
             price=3500000,
             image_url="",
+            latitude=41.33,
+            longitude=69.29,
         ),
         Listing(
             id=2,
@@ -104,6 +137,8 @@ class ListingState(rx.State):
             rooms=2,
             price=4800000,
             image_url="",
+            latitude=41.28,
+            longitude=69.22,
         ),
     ]
     title: str = ""
@@ -130,6 +165,10 @@ class ListingState(rx.State):
     pending_image_name: str = ""
     edit_image_url: str = ""
     edit_image_url_before_upload: str = ""
+    create_latitude: str = ""
+    create_longitude: str = ""
+    edit_latitude: str = ""
+    edit_longitude: str = ""
     detail_id: int = 0
     detail_title: str = ""
     detail_district: str = ""
@@ -137,6 +176,7 @@ class ListingState(rx.State):
     detail_price: int = 0
     detail_owner_id: str = ""
     detail_image_url: str = ""
+    detail_has_location: bool = False
 
     def _clear_listing_detail(self) -> None:
         self.detail_id = 0
@@ -146,6 +186,7 @@ class ListingState(rx.State):
         self.detail_price = 0
         self.detail_owner_id = ""
         self.detail_image_url = ""
+        self.detail_has_location = False
 
     def load_listing_detail(self) -> None:
         """Load one listing for `/listing/[listing_id]` from router params."""
@@ -163,7 +204,9 @@ class ListingState(rx.State):
         try:
             response = (
                 sb.table("listings")
-                .select("id,title,district,rooms,price,owner_id,image_url")
+                .select(
+                    "id,title,district,rooms,price,owner_id,image_url,latitude,longitude"
+                )
                 .eq("id", listing_id)
                 .limit(1)
                 .execute()
@@ -180,6 +223,9 @@ class ListingState(rx.State):
             self.detail_price = int(row.get("price", 0) or 0)
             self.detail_owner_id = str(row.get("owner_id", "") or "")
             self.detail_image_url = str(row.get("image_url") or "")
+            self.detail_has_location = row.get("latitude") is not None and row.get(
+                "longitude"
+            ) is not None
         except Exception:
             self._clear_listing_detail()
             self.error_message = "Не удалось загрузить объявление."
@@ -240,6 +286,18 @@ class ListingState(rx.State):
     def set_price(self, value: str) -> None:
         self.price = int(value) if value else 0
 
+    def set_create_latitude(self, value: str) -> None:
+        self.create_latitude = value
+
+    def set_create_longitude(self, value: str) -> None:
+        self.create_longitude = value
+
+    def set_edit_latitude(self, value: str) -> None:
+        self.edit_latitude = value
+
+    def set_edit_longitude(self, value: str) -> None:
+        self.edit_longitude = value
+
     def set_search_query(self, value: str) -> None:
         self.search_query = value
 
@@ -294,6 +352,12 @@ class ListingState(rx.State):
         self.edit_price = target.price
         self.edit_image_url = target.image_url or ""
         self.edit_image_url_before_upload = self.edit_image_url
+        self.edit_latitude = (
+            str(target.latitude) if target.latitude is not None else ""
+        )
+        self.edit_longitude = (
+            str(target.longitude) if target.longitude is not None else ""
+        )
         self.error_message = ""
 
     def cancel_edit(self) -> None:
@@ -304,6 +368,27 @@ class ListingState(rx.State):
         self.edit_price = 0
         self.edit_image_url = ""
         self.edit_image_url_before_upload = ""
+        self.edit_latitude = ""
+        self.edit_longitude = ""
+
+    def render_map_leaflet(self) -> Any:
+        markers: list[dict[str, Any]] = []
+        for item in self.listings:
+            if item.latitude is None or item.longitude is None:
+                continue
+            markers.append(
+                {
+                    "id": item.id,
+                    "lat": item.latitude,
+                    "lng": item.longitude,
+                    "title": item.title,
+                    "price": format_price_uzs(item.price),
+                    "url": f"/listing/{item.id}",
+                }
+            )
+        return rx.call_script(
+            f"window.__rentoInitMap({json.dumps(markers, ensure_ascii=True)});"
+        )
 
     async def upload_create_photo(self, files: list[rx.UploadFile]) -> None:
         self.error_message = ""
@@ -372,15 +457,25 @@ class ListingState(rx.State):
             self.error_message = "Supabase не настроен. Проверьте .env."
             return
         try:
-            sb.table("listings").update(
-                {
-                    "title": self.edit_title,
-                    "district": self.edit_district,
-                    "rooms": self.edit_rooms,
-                    "price": self.edit_price,
-                    "image_url": self.edit_image_url or None,
-                }
-            ).eq("id", self.edit_listing_id).execute()
+            coords = _optional_lat_lng_from_form(self.edit_latitude, self.edit_longitude)
+            if isinstance(coords, str):
+                self.error_message = coords
+                return
+            lat, lng = coords
+            update_row: dict[str, Any] = {
+                "title": self.edit_title,
+                "district": self.edit_district,
+                "rooms": self.edit_rooms,
+                "price": self.edit_price,
+                "image_url": self.edit_image_url or None,
+            }
+            if lat is not None:
+                update_row["latitude"] = lat
+                update_row["longitude"] = lng
+            else:
+                update_row["latitude"] = None
+                update_row["longitude"] = None
+            sb.table("listings").update(update_row).eq("id", self.edit_listing_id).execute()
             self.success_message = "Объявление обновлено."
             self.error_message = ""
             self.cancel_edit()
@@ -427,6 +522,12 @@ class ListingState(rx.State):
                 self.error_message = "Ваш аккаунт заблокирован. Публикация объявлений недоступна."
                 self.success_message = ""
                 return
+            coords = _optional_lat_lng_from_form(self.create_latitude, self.create_longitude)
+            if isinstance(coords, str):
+                self.error_message = coords
+                self.success_message = ""
+                return
+            lat, lng = coords
             row: dict[str, Any] = {
                 "title": self.title,
                 "district": self.district,
@@ -436,11 +537,16 @@ class ListingState(rx.State):
             }
             if self.pending_image_url:
                 row["image_url"] = self.pending_image_url
+            if lat is not None:
+                row["latitude"] = lat
+                row["longitude"] = lng
             sb.table("listings").insert(row).execute()
             self.title = ""
             self.district = ""
             self.rooms = 1
             self.price = 0
+            self.create_latitude = ""
+            self.create_longitude = ""
             self.pending_image_url = ""
             self.pending_image_name = ""
             self.error_message = ""
@@ -461,7 +567,9 @@ class ListingState(rx.State):
         try:
             response = (
                 sb.table("listings")
-                .select("id,title,district,rooms,price,owner_id,image_url")
+                .select(
+                    "id,title,district,rooms,price,owner_id,image_url,latitude,longitude"
+                )
                 .order("id", desc=True)
                 .execute()
             )
@@ -475,6 +583,8 @@ class ListingState(rx.State):
                     price=int(row.get("price", 0) or 0),
                     owner_id=str(row.get("owner_id", "") or ""),
                     image_url=str(row.get("image_url") or ""),
+                    latitude=_row_float_or_none(row.get("latitude")),
+                    longitude=_row_float_or_none(row.get("longitude")),
                 )
                 for row in rows
                 if row.get("id") is not None
@@ -499,7 +609,9 @@ class ListingState(rx.State):
                 return
             response = (
                 sb.table("listings")
-                .select("id,title,district,rooms,price,owner_id,image_url")
+                .select(
+                    "id,title,district,rooms,price,owner_id,image_url,latitude,longitude"
+                )
                 .eq("owner_id", user.id)
                 .order("id", desc=True)
                 .execute()
@@ -514,6 +626,8 @@ class ListingState(rx.State):
                     price=int(row.get("price", 0) or 0),
                     owner_id=str(row.get("owner_id", "") or ""),
                     image_url=str(row.get("image_url") or ""),
+                    latitude=_row_float_or_none(row.get("latitude")),
+                    longitude=_row_float_or_none(row.get("longitude")),
                 )
                 for row in rows
                 if row.get("id") is not None

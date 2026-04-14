@@ -7,6 +7,7 @@ from rento.pages.favorites import favorites
 from rento.pages.health import health
 from rento.pages.index import index
 from rento.pages.listing_detail import listing_detail
+from rento.pages.map_page import map_page
 from rento.pages.listings import listings
 from rento.pages.login import login
 from rento.pages.my_listings import my_listings
@@ -27,6 +28,11 @@ app = rx.App(
     head_components=[
         rx.el.link(rel="manifest", href="/manifest.webmanifest"),
         rx.el.meta(name="theme-color", content="#4f46e5"),
+        rx.el.link(
+            rel="stylesheet",
+            href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css",
+        ),
+        rx.el.script(src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"),
     ],
 )
 
@@ -48,6 +54,16 @@ app.add_page(
     route="/listings",
     title="Объявления",
     on_load=[AuthState.load_current_user_status, ListingState.load_listings],
+)
+app.add_page(
+    map_page,
+    route="/map",
+    title="Карта",
+    on_load=[
+        AuthState.load_current_user_status,
+        ListingState.load_listings,
+        ListingState.render_map_leaflet,
+    ],
 )
 app.add_page(
     listing_detail,
