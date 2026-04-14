@@ -66,8 +66,11 @@ def _humanize_storage_upload_error(exc: Exception) -> str:
 
 
 async def _read_upload_bytes(upload: rx.UploadFile) -> bytes:
+    # Reflex may set path to the original filename only, not a temp path — then Path().read_bytes() fails.
     if upload.path is not None:
-        return Path(upload.path).read_bytes()
+        p = Path(upload.path)
+        if p.is_file():
+            return p.read_bytes()
     await upload.seek(0)
     return await upload.read()
 
