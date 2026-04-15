@@ -11,6 +11,7 @@ from rento.supabase_client import get_supabase
 from rento.utils.helpers import format_price_uzs
 
 LISTING_IMAGES_BUCKET = "listing-images"
+LISTINGS_PAGE_SIZE = 12
 _ALLOWED_IMAGE_EXT = {".jpg", ".jpeg", ".png", ".webp"}
 
 
@@ -152,6 +153,7 @@ class ListingState(rx.State):
     min_rooms: int = 0
     max_rooms: int = 0
     sort_by: str = "newest"
+    listings_page: int = 1
     error_message: str = ""
     success_message: str = ""
     my_listings: list[Listing] = []
@@ -300,21 +302,27 @@ class ListingState(rx.State):
 
     def set_search_query(self, value: str) -> None:
         self.search_query = value
+        self.listings_page = 1
 
     def set_filter_district(self, value: str) -> None:
         self.filter_district = value
+        self.listings_page = 1
 
     def set_min_price(self, value: str) -> None:
         self.min_price = int(value) if value else 0
+        self.listings_page = 1
 
     def set_max_price(self, value: str) -> None:
         self.max_price = int(value) if value else 0
+        self.listings_page = 1
 
     def set_min_rooms(self, value: str) -> None:
         self.min_rooms = int(value) if value else 0
+        self.listings_page = 1
 
     def set_max_rooms(self, value: str) -> None:
         self.max_rooms = int(value) if value else 0
+        self.listings_page = 1
 
     def reset_filters(self) -> None:
         self.search_query = ""
@@ -324,9 +332,19 @@ class ListingState(rx.State):
         self.min_rooms = 0
         self.max_rooms = 0
         self.sort_by = "newest"
+        self.listings_page = 1
 
     def set_sort_by(self, value: str) -> None:
         self.sort_by = value
+        self.listings_page = 1
+
+    def listings_prev_page(self) -> None:
+        if self.listings_page > 1:
+            self.listings_page -= 1
+
+    def listings_next_page(self) -> None:
+        if self.listings_page < self._listings_total_pages_int():
+            self.listings_page += 1
 
     def set_edit_title(self, value: str) -> None:
         self.edit_title = value
@@ -590,6 +608,7 @@ class ListingState(rx.State):
                 if row.get("id") is not None
             ]
             self.error_message = ""
+            self.listings_page = 1
             self.load_favorites()
         except Exception:
             self.error_message = "Не удалось загрузить объявления. Обновите страницу."
@@ -685,12 +704,7 @@ class ListingState(rx.State):
         except Exception:
             self.error_message = "Не удалось обновить избранное. Попробуйте еще раз."
 
-    @rx.var(cache=False)
-    def is_editing(self) -> bool:
-        return self.edit_listing_id > 0
-
-    @rx.var(cache=False)
-    def filtered_listings(self) -> list[Listing]:
+    def _filtered_listings_core(self) -> list[Listing]:
         query = self.search_query.strip().lower()
         district_query = self.filter_district.strip().lower()
         result: list[Listing] = []
@@ -716,6 +730,36 @@ class ListingState(rx.State):
             return sorted(result, key=lambda item: item.rooms, reverse=True)
         return sorted(result, key=lambda item: item.id, reverse=True)
 
+    def _listings_total_pages_int(self) -> int:
+        n = len(self._filtered_listings_core())
+        if n == 0:
+            return 1
+        return (n + LISTINGS_PAGE_SIZE - 1) // LISTINGS_PAGE_SIZE
+
+    @rx.var(cache=False)
+    def is_editing(self) -> bool:
+        return self.edit_listing_id > 0
+
+    @rx.var(cache=False)
+    def filtered_listings(self) -> list[Listing]:
+        return self._filtered_listings_core()
+
+    @rx.var(cache=False)
+    def paginated_filtered_listings(self) -> list[Listing]:
+        full = self._filtered_listings_core()
+        tp = self._listings_total_pages_int()
+        page = min(max(1, self.listings_page), tp)
+        start = (page - 1) * LISTINGS_PAGE_SIZE
+        return full[start : start + LISTINGS_PAGE_SIZE]
+
+    @rx.var(cache=False)
+    def listings_filtered_count(self) -> int:
+        return len(self._filtered_listings_core())
+
+    @rx.var(cache=False)
+    def listings_total_pages(self) -> int:
+        return self._listings_total_pages_int()
+
     @rx.var(cache=False)
     def favorite_listings(self) -> list[Listing]:
         favorite_ids = set(self.favorite_listing_ids)
@@ -723,4 +767,4 @@ class ListingState(rx.State):
 
     @rx.var(cache=False)
     def has_filtered_listings(self) -> bool:
-        return len(self.filtered_listings) > 0
+        return len(self._filtered_listings_core()) > 0

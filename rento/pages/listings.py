@@ -93,10 +93,24 @@ def listings() -> rx.Component:
                     rx.callout(ListingState.error_message, color_scheme="red"),
                     rx.fragment(),
                 ),
+                rx.hstack(
+                    rx.text("Найдено:", size="2", color=rx.color("gray", 10)),
+                    rx.text(
+                        ListingState.listings_filtered_count,
+                        size="2",
+                        weight="bold",
+                    ),
+                    rx.spacer(),
+                    width="100%",
+                    align_items="center",
+                ),
                 rx.cond(
                     ListingState.has_filtered_listings,
                     rx.grid(
-                        rx.foreach(ListingState.filtered_listings, listing_card_with_favorite),
+                        rx.foreach(
+                            ListingState.paginated_filtered_listings,
+                            listing_card_with_favorite,
+                        ),
                         columns="2",
                         spacing="4",
                         width="100%",
@@ -105,6 +119,36 @@ def listings() -> rx.Component:
                         "Ничего не подошло. Сбросьте фильтры или измените поиск.",
                         color=rx.color("gray", 10),
                     ),
+                ),
+                rx.cond(
+                    ListingState.listings_total_pages > 1,
+                    rx.hstack(
+                        rx.button(
+                            "Назад",
+                            on_click=ListingState.listings_prev_page,
+                            variant="soft",
+                            disabled=ListingState.listings_page <= 1,
+                        ),
+                        rx.text(
+                            ListingState.listings_page,
+                            " / ",
+                            ListingState.listings_total_pages,
+                            size="2",
+                            color=rx.color("gray", 11),
+                        ),
+                        rx.button(
+                            "Вперёд",
+                            on_click=ListingState.listings_next_page,
+                            variant="soft",
+                            disabled=ListingState.listings_page >= ListingState.listings_total_pages,
+                        ),
+                        spacing="3",
+                        align_items="center",
+                        width="100%",
+                        justify="center",
+                        padding_top="2",
+                    ),
+                    rx.fragment(),
                 ),
                 width="100%",
                 spacing="4",
