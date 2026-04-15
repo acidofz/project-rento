@@ -68,7 +68,8 @@ app.add_page(
 app.add_page(
     listing_detail,
     route="/listing/[listing_id]",
-    title="Объявление",
+    title=ListingState.listing_detail_page_title,
+    description=ListingState.listing_detail_meta_description,
     on_load=[
         AuthState.load_current_user_status,
         ListingState.load_listings,
