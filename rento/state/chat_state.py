@@ -1,3 +1,4 @@
+import asyncio
 from pydantic import BaseModel
 import reflex as rx
 import time
@@ -40,6 +41,37 @@ class ChatState(rx.State):
     current_user_id: str = ""
     user_labels: dict[str, str] = {}
     quick_contacts: list[QuickContact] = []
+    _n_chat_poll_tasks: int = 0
+
+    @staticmethod
+    def _normalized_route_path(path: str | None) -> str:
+        p = (path or "").split("?", 1)[0].strip()
+        if not p:
+            return "/"
+        return p.rstrip("/") or "/"
+
+    @rx.event
+    def start_chat_message_poll(self):
+        """Запускает один фоновый опрос сообщений, пока открыта страница «Чаты»."""
+        return ChatState.poll_chat_messages_background
+
+    @rx.event(background=True)
+    async def poll_chat_messages_background(self):
+        async with self:
+            if self._n_chat_poll_tasks > 0:
+                return
+            self._n_chat_poll_tasks += 1
+        try:
+            while True:
+                async with self:
+                    route = self._normalized_route_path(self.router.page.path)
+                    if route != "/chats" or self.selected_chat_id <= 0:
+                        return
+                    self.load_messages()
+                await asyncio.sleep(6)
+        finally:
+            async with self:
+                self._n_chat_poll_tasks = max(0, self._n_chat_poll_tasks - 1)
 
     def _is_user_blocked(self) -> bool:
         sb = get_supabase()

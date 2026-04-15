@@ -10,5 +10,10 @@ cmds = [
   "test -d .web || (echo 'reflex export did not produce .web' >&2; exit 1)",
 ]
 
+# Nixpacks по умолчанию добавляет сюда `uv sync` без --frozen; заменяем на замороженную установку.
+[phases.build]
+dependsOn = ["install"]
+cmds = ["uv sync --frozen"]
+
 [start]
 cmd = "uv run reflex run --env prod --single-port --frontend-port $PORT --backend-host 0.0.0.0 --backend-port $PORT"

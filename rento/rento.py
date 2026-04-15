@@ -85,7 +85,11 @@ app.add_page(
     chats,
     route="/chats",
     title="Чаты",
-    on_load=[AuthState.load_current_user_status, ChatState.load_chats],
+    on_load=[
+        AuthState.load_current_user_status,
+        ChatState.load_chats,
+        ChatState.start_chat_message_poll,
+    ],
 )
 app.add_page(
     favorites,
