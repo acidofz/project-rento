@@ -7,6 +7,7 @@ nixPkgs = ["python312", "uv", "unzip", "nodejs_22"]
 cmds = [
   "uv sync --frozen",
   "uv run reflex export --no-zip --env prod",
+  "test -d .web || (echo 'reflex export did not produce .web' >&2; exit 1)",
 ]
 
 [start]
