@@ -1,5 +1,6 @@
 import reflex as rx
 
+from rento.components.footer import site_footer
 from rento.components.navbar import navbar
 from rento.state.auth_state import AuthState
 
@@ -31,6 +32,7 @@ def profile() -> rx.Component:
                 align_items="start",
             )
         ),
+        site_footer(),
         width="100%",
         align_items="stretch",
     )

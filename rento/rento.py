@@ -11,8 +11,10 @@ from rento.pages.map_page import map_page
 from rento.pages.listings import listings
 from rento.pages.login import login
 from rento.pages.my_listings import my_listings
+from rento.pages.privacy import privacy
 from rento.pages.profile import profile
 from rento.pages.register import register
+from rento.pages.terms import terms
 from rento.state.listing_state import ListingState
 from rento.state.chat_state import ChatState
 from rento.state.admin_state import AdminState
@@ -26,7 +28,6 @@ app = rx.App(
         accent_color="indigo",
     ),
     head_components=[
-        rx.el.link(rel="manifest", href="/manifest.webmanifest"),
         rx.el.meta(name="theme-color", content="#4f46e5"),
         rx.el.link(
             rel="stylesheet",
@@ -69,7 +70,6 @@ app.add_page(
     listing_detail,
     route="/listing/[listing_id]",
     title=ListingState.listing_detail_page_title,
-    description=ListingState.listing_detail_meta_description,
     on_load=[
         AuthState.load_current_user_status,
         ListingState.load_listings,
@@ -117,3 +117,5 @@ app.add_page(
     on_load=AuthState.load_current_user_status,
 )
 app.add_page(health, route="/health", title="Health")
+app.add_page(terms, route="/terms", title="Правила площадки")
+app.add_page(privacy, route="/privacy", title="Персональные данные")

@@ -744,19 +744,6 @@ class ListingState(rx.State):
         return f"{t} · RENTO"
 
     @rx.var(cache=False)
-    def listing_detail_meta_description(self) -> str:
-        if self.detail_id <= 0:
-            return "Аренда жилья без посредников в Ташкенте на RENTO."
-        t = (self.detail_title or "").strip()
-        d = (self.detail_district or "").strip()
-        if not t and not d:
-            return "Аренда жилья без посредников в Ташкенте на RENTO."
-        price_l = format_price_uzs(self.detail_price)
-        rooms_l = f"{self.detail_rooms} комн." if self.detail_rooms > 0 else ""
-        parts = [p for p in (t, d, rooms_l, price_l) if p]
-        return " · ".join(parts)
-
-    @rx.var(cache=False)
     def is_editing(self) -> bool:
         return self.edit_listing_id > 0
 

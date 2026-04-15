@@ -1,5 +1,6 @@
 import reflex as rx
 
+from rento.components.footer import site_footer
 from rento.components.navbar import navbar
 
 
@@ -29,6 +30,7 @@ def index() -> rx.Component:
             ),
             size="3",
         ),
+        site_footer(),
         width="100%",
         min_height="100vh",
         align_items="stretch",

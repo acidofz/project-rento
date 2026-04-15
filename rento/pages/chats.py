@@ -1,5 +1,6 @@
 import reflex as rx
 
+from rento.components.footer import site_footer
 from rento.components.navbar import navbar
 from rento.state.chat_state import ChatState
 
@@ -139,6 +140,7 @@ def chats() -> rx.Component:
             ),
             size="4",
         ),
+        site_footer(),
         width="100%",
         min_height="100vh",
         align_items="stretch",

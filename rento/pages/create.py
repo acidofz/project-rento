@@ -1,5 +1,6 @@
 import reflex as rx
 
+from rento.components.footer import site_footer
 from rento.components.navbar import navbar
 from rento.state.listing_state import ListingState
 
@@ -121,6 +122,7 @@ def create() -> rx.Component:
                 padding_y="2rem",
             )
         ),
+        site_footer(),
         width="100%",
         align_items="stretch",
     )
