@@ -44,5 +44,8 @@ def listing_card(listing: Listing) -> rx.Component:
             align_items="start",
             spacing="2",
         ),
+        variant="surface",
+        size="3",
         width="100%",
+        style={"box_shadow": "0 2px 12px -4px rgba(0, 0, 0, 0.08)"},
     )
