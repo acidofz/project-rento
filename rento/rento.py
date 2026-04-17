@@ -14,6 +14,7 @@ from rento.pages.my_listings import my_listings
 from rento.pages.privacy import privacy
 from rento.pages.profile import profile
 from rento.pages.register import register
+from rento.pages.monetization import monetization
 from rento.pages.terms import terms
 from rento.state.listing_state import ListingState
 from rento.state.chat_state import ChatState
@@ -119,3 +120,4 @@ app.add_page(
 app.add_page(health, route="/health", title="Health")
 app.add_page(terms, route="/terms", title="Правила площадки")
 app.add_page(privacy, route="/privacy", title="Персональные данные")
+app.add_page(monetization, route="/monetization", title="Бизнес-модель")

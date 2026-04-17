@@ -22,6 +22,12 @@ def site_footer() -> rx.Component:
                             size="2",
                             color=rx.color("gray", 11),
                         ),
+                        rx.link(
+                            "Бизнес-модель",
+                            href="/monetization",
+                            size="2",
+                            color=rx.color("gray", 11),
+                        ),
                         spacing="4",
                     ),
                     rx.spacer(),
