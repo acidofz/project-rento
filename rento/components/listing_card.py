@@ -8,6 +8,11 @@ def listing_card(listing: Listing) -> rx.Component:
     return rx.card(
         rx.vstack(
             rx.cond(
+                listing.is_premium,
+                rx.badge("PREMIUM", color_scheme="amber", variant="solid"),
+                rx.fragment(),
+            ),
+            rx.cond(
                 listing.image_url != "",
                 rx.image(
                     src=listing.image_url,
@@ -47,5 +52,10 @@ def listing_card(listing: Listing) -> rx.Component:
         variant="surface",
         size="3",
         width="100%",
+        border=rx.cond(
+            listing.is_premium,
+            "1px solid rgba(245, 158, 11, 0.28)",
+            "1px solid rgba(148, 163, 184, 0.18)",
+        ),
         style={"box_shadow": "0 2px 12px -4px rgba(0, 0, 0, 0.08)"},
     )

@@ -115,6 +115,7 @@ class Listing(BaseModel):
     image_url: str = ""
     latitude: float | None = None
     longitude: float | None = None
+    is_premium: bool = False
 
 
 class ListingState(rx.State):
@@ -169,8 +170,10 @@ class ListingState(rx.State):
     edit_image_url_before_upload: str = ""
     create_latitude: str = ""
     create_longitude: str = ""
+    create_is_premium: bool = False
     edit_latitude: str = ""
     edit_longitude: str = ""
+    edit_is_premium: bool = False
     detail_id: int = 0
     detail_title: str = ""
     detail_district: str = ""
@@ -179,6 +182,7 @@ class ListingState(rx.State):
     detail_owner_id: str = ""
     detail_image_url: str = ""
     detail_has_location: bool = False
+    detail_is_premium: bool = False
 
     def _clear_listing_detail(self) -> None:
         self.detail_id = 0
@@ -189,6 +193,7 @@ class ListingState(rx.State):
         self.detail_owner_id = ""
         self.detail_image_url = ""
         self.detail_has_location = False
+        self.detail_is_premium = False
 
     def load_listing_detail(self) -> None:
         """Load one listing for `/listing/[listing_id]` from router params."""
@@ -207,7 +212,7 @@ class ListingState(rx.State):
             response = (
                 sb.table("listings")
                 .select(
-                    "id,title,district,rooms,price,owner_id,image_url,latitude,longitude"
+                    "id,title,district,rooms,price,owner_id,image_url,latitude,longitude,is_premium"
                 )
                 .eq("id", listing_id)
                 .limit(1)
@@ -228,6 +233,7 @@ class ListingState(rx.State):
             self.detail_has_location = row.get("latitude") is not None and row.get(
                 "longitude"
             ) is not None
+            self.detail_is_premium = bool(row.get("is_premium", False))
         except Exception:
             self._clear_listing_detail()
             self.error_message = "Не удалось загрузить объявление."
@@ -294,11 +300,17 @@ class ListingState(rx.State):
     def set_create_longitude(self, value: str) -> None:
         self.create_longitude = value
 
+    def toggle_create_is_premium(self) -> None:
+        self.create_is_premium = not self.create_is_premium
+
     def set_edit_latitude(self, value: str) -> None:
         self.edit_latitude = value
 
     def set_edit_longitude(self, value: str) -> None:
         self.edit_longitude = value
+
+    def toggle_edit_is_premium(self) -> None:
+        self.edit_is_premium = not self.edit_is_premium
 
     def set_search_query(self, value: str) -> None:
         self.search_query = value
@@ -376,6 +388,7 @@ class ListingState(rx.State):
         self.edit_longitude = (
             str(target.longitude) if target.longitude is not None else ""
         )
+        self.edit_is_premium = bool(target.is_premium)
         self.error_message = ""
 
     def cancel_edit(self) -> None:
@@ -388,6 +401,7 @@ class ListingState(rx.State):
         self.edit_image_url_before_upload = ""
         self.edit_latitude = ""
         self.edit_longitude = ""
+        self.edit_is_premium = False
 
     def render_map_leaflet(self) -> Any:
         markers: list[dict[str, Any]] = []
@@ -486,6 +500,7 @@ class ListingState(rx.State):
                 "rooms": self.edit_rooms,
                 "price": self.edit_price,
                 "image_url": self.edit_image_url or None,
+                "is_premium": self.edit_is_premium,
             }
             if lat is not None:
                 update_row["latitude"] = lat
@@ -552,6 +567,7 @@ class ListingState(rx.State):
                 "rooms": self.rooms,
                 "price": self.price,
                 "owner_id": user.id,
+                "is_premium": self.create_is_premium,
             }
             if self.pending_image_url:
                 row["image_url"] = self.pending_image_url
@@ -565,6 +581,7 @@ class ListingState(rx.State):
             self.price = 0
             self.create_latitude = ""
             self.create_longitude = ""
+            self.create_is_premium = False
             self.pending_image_url = ""
             self.pending_image_name = ""
             self.error_message = ""
@@ -586,7 +603,7 @@ class ListingState(rx.State):
             response = (
                 sb.table("listings")
                 .select(
-                    "id,title,district,rooms,price,owner_id,image_url,latitude,longitude"
+                    "id,title,district,rooms,price,owner_id,image_url,latitude,longitude,is_premium"
                 )
                 .order("id", desc=True)
                 .execute()
@@ -603,6 +620,7 @@ class ListingState(rx.State):
                     image_url=str(row.get("image_url") or ""),
                     latitude=_row_float_or_none(row.get("latitude")),
                     longitude=_row_float_or_none(row.get("longitude")),
+                    is_premium=bool(row.get("is_premium", False)),
                 )
                 for row in rows
                 if row.get("id") is not None
@@ -629,7 +647,7 @@ class ListingState(rx.State):
             response = (
                 sb.table("listings")
                 .select(
-                    "id,title,district,rooms,price,owner_id,image_url,latitude,longitude"
+                    "id,title,district,rooms,price,owner_id,image_url,latitude,longitude,is_premium"
                 )
                 .eq("owner_id", user.id)
                 .order("id", desc=True)
@@ -647,6 +665,7 @@ class ListingState(rx.State):
                     image_url=str(row.get("image_url") or ""),
                     latitude=_row_float_or_none(row.get("latitude")),
                     longitude=_row_float_or_none(row.get("longitude")),
+                    is_premium=bool(row.get("is_premium", False)),
                 )
                 for row in rows
                 if row.get("id") is not None
@@ -723,12 +742,18 @@ class ListingState(rx.State):
                 continue
             result.append(item)
         if self.sort_by == "price_asc":
-            return sorted(result, key=lambda item: item.price)
+            return sorted(result, key=lambda item: (not item.is_premium, item.price, -item.id))
         if self.sort_by == "price_desc":
-            return sorted(result, key=lambda item: item.price, reverse=True)
+            return sorted(
+                result,
+                key=lambda item: (not item.is_premium, -item.price, -item.id),
+            )
         if self.sort_by == "rooms_desc":
-            return sorted(result, key=lambda item: item.rooms, reverse=True)
-        return sorted(result, key=lambda item: item.id, reverse=True)
+            return sorted(
+                result,
+                key=lambda item: (not item.is_premium, -item.rooms, -item.id),
+            )
+        return sorted(result, key=lambda item: (not item.is_premium, -item.id))
 
     def _listings_total_pages_int(self) -> int:
         n = len(self._filtered_listings_core())

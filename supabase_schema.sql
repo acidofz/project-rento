@@ -265,6 +265,10 @@ alter table public.listings add column if not exists image_url text;
 -- Map markers (WGS84). Optional: both null or both set from the app.
 alter table public.listings add column if not exists latitude double precision;
 alter table public.listings add column if not exists longitude double precision;
+alter table public.listings add column if not exists is_premium boolean not null default false;
+
+create index if not exists listings_premium_id_idx
+on public.listings(is_premium, id desc);
 
 -- Storage: public bucket for listing photos (path: {user_id}/{filename})
 insert into storage.buckets (id, name, public)

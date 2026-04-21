@@ -40,6 +40,40 @@ def create() -> rx.Component:
                     value=ListingState.price,
                     on_change=ListingState.set_price,
                 ),
+                rx.vstack(
+                    rx.text("Тип размещения", size="2", color=rx.color("gray", 10)),
+                    rx.hstack(
+                        rx.badge(
+                            rx.cond(ListingState.create_is_premium, "Премиум", "Обычное"),
+                            color_scheme=rx.cond(
+                                ListingState.create_is_premium, "amber", "gray"
+                            ),
+                            variant="soft",
+                        ),
+                        rx.button(
+                            rx.cond(
+                                ListingState.create_is_premium,
+                                "Сделать обычным",
+                                "Сделать премиум",
+                            ),
+                            on_click=ListingState.toggle_create_is_premium,
+                            variant="soft",
+                            color_scheme=rx.cond(
+                                ListingState.create_is_premium, "gray", "amber"
+                            ),
+                            size="2",
+                        ),
+                        spacing="2",
+                        align_items="center",
+                    ),
+                    rx.text(
+                        "Премиум-объявления показываются выше в ленте.",
+                        size="1",
+                        color=rx.color("gray", 9),
+                    ),
+                    spacing="1",
+                    align_items="start",
+                ),
                 rx.text(
                     "Точка на карте (необязательно)",
                     size="2",

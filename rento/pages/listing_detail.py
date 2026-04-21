@@ -53,7 +53,17 @@ def listing_detail() -> rx.Component:
                                     border_radius="md",
                                 ),
                             ),
-                            rx.heading(ListingState.detail_title, size="7"),
+                            rx.hstack(
+                                rx.heading(ListingState.detail_title, size="7"),
+                                rx.cond(
+                                    ListingState.detail_is_premium,
+                                    rx.badge("PREMIUM", color_scheme="amber", variant="solid"),
+                                    rx.fragment(),
+                                ),
+                                spacing="2",
+                                align_items="center",
+                                flex_wrap="wrap",
+                            ),
                             rx.hstack(
                                 rx.text(ListingState.detail_district, weight="medium"),
                                 rx.text("·", color=rx.color("gray", 9)),

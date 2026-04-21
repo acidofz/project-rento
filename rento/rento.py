@@ -20,6 +20,7 @@ from rento.state.listing_state import ListingState
 from rento.state.chat_state import ChatState
 from rento.state.admin_state import AdminState
 from rento.state.auth_state import AuthState
+from rento.ready_layer import build_api_transformer
 
 app = rx.App(
     theme=rx.theme(
@@ -28,6 +29,7 @@ app = rx.App(
         radius="medium",
         accent_color="indigo",
     ),
+    api_transformer=build_api_transformer(),
     head_components=[
         rx.el.meta(name="theme-color", content="#4f46e5"),
         rx.el.link(

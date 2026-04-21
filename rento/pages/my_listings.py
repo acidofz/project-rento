@@ -81,6 +81,39 @@ def my_listings() -> rx.Component:
                                 value=ListingState.edit_price,
                                 on_change=ListingState.set_edit_price,
                             ),
+                            rx.vstack(
+                                rx.text("Тип размещения", size="2", color=rx.color("gray", 10)),
+                                rx.hstack(
+                                    rx.badge(
+                                        rx.cond(
+                                            ListingState.edit_is_premium,
+                                            "Премиум",
+                                            "Обычное",
+                                        ),
+                                        color_scheme=rx.cond(
+                                            ListingState.edit_is_premium, "amber", "gray"
+                                        ),
+                                        variant="soft",
+                                    ),
+                                    rx.button(
+                                        rx.cond(
+                                            ListingState.edit_is_premium,
+                                            "Сделать обычным",
+                                            "Сделать премиум",
+                                        ),
+                                        on_click=ListingState.toggle_edit_is_premium,
+                                        variant="soft",
+                                        color_scheme=rx.cond(
+                                            ListingState.edit_is_premium, "gray", "amber"
+                                        ),
+                                        size="2",
+                                    ),
+                                    spacing="2",
+                                    align_items="center",
+                                ),
+                                spacing="1",
+                                align_items="start",
+                            ),
                             rx.text(
                                 "Точка на карте",
                                 size="2",
