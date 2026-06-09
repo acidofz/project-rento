@@ -10,7 +10,7 @@
       .replace(/"/g, "&quot;");
   }
 
-  window.__uyClickInitMap = function (markers) {
+  window.__uyClickInitMap = function (markers, focusId) {
     var el = document.getElementById("uy-click-map");
     if (!el || typeof L === "undefined") return;
 
@@ -28,27 +28,40 @@
     el.__uyClickMap = map;
 
     var bounds = [];
+    var focusMarker = null;
+    var focusLatLng = null;
+
     for (var i = 0; i < markers.length; i++) {
       var m = markers[i];
       var lat = Number(m.lat);
       var lng = Number(m.lng);
       if (!isFinite(lat) || !isFinite(lng)) continue;
       bounds.push([lat, lng]);
+
       var marker = L.marker([lat, lng]).addTo(map);
       var title = (m.title || "Объявление") + "";
       var price = (m.price || "") + "";
       var url = (m.url || "") + "";
+      var imgHtml = m.image_url
+        ? '<img src="' + escapeHtml(m.image_url) + '" style="width:100%;max-height:100px;object-fit:cover;border-radius:4px;margin-bottom:4px;" /><br/>'
+        : "";
       marker.bindPopup(
-        "<b>" +
-          escapeHtml(title) +
-          "</b><br/>" +
+        imgHtml +
+          "<b>" + escapeHtml(title) + "</b><br/>" +
           escapeHtml(price) +
-          '<br/><a href="' +
-          escapeHtml(url) +
-          '">Открыть</a>'
+          '<br/><a href="' + escapeHtml(url) + '">Открыть →</a>'
       );
+
+      if (focusId && m.id === focusId) {
+        focusMarker = marker;
+        focusLatLng = [lat, lng];
+      }
     }
-    if (bounds.length > 0) {
+
+    if (focusMarker && focusLatLng) {
+      map.setView(focusLatLng, 16);
+      focusMarker.openPopup();
+    } else if (bounds.length > 0) {
       map.fitBounds(bounds, { padding: [48, 48], maxZoom: 15 });
     }
   };

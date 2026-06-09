@@ -80,11 +80,15 @@ def listing_detail() -> rx.Component:
                             ),
                             rx.cond(
                                 ListingState.detail_has_location,
-                                rx.link(
+                                rx.button(
                                     "Показать на карте",
-                                    href="/map",
+                                    on_click=ListingState.go_to_map_focused(
+                                        ListingState.detail_id
+                                    ),
+                                    variant="ghost",
                                     size="2",
                                     color=rx.color("blue", 11),
+                                    cursor="pointer",
                                 ),
                                 rx.fragment(),
                             ),

@@ -183,6 +183,7 @@ class ListingState(rx.State):
     detail_image_url: str = ""
     detail_has_location: bool = False
     detail_is_premium: bool = False
+    map_focus_id: int = 0
 
     def _clear_listing_detail(self) -> None:
         self.detail_id = 0
@@ -416,11 +417,18 @@ class ListingState(rx.State):
                     "title": item.title,
                     "price": format_price_uzs(item.price),
                     "url": f"/listing/{item.id}",
+                    "image_url": item.image_url or "",
                 }
             )
+        focus_id = self.map_focus_id
+        self.map_focus_id = 0
         return rx.call_script(
-            f"window.__uyClickInitMap({json.dumps(markers, ensure_ascii=True)});"
+            f"window.__uyClickInitMap({json.dumps(markers, ensure_ascii=True)}, {focus_id});"
         )
+
+    def go_to_map_focused(self, listing_id: int):
+        self.map_focus_id = listing_id
+        return rx.redirect("/map")
 
     async def upload_create_photo(self, files: list[rx.UploadFile]):
         self.error_message = ""
