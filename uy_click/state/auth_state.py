@@ -153,3 +153,8 @@ class AuthState(rx.State):
         self.user_name = "Гость"
         self.is_blocked = False
         self.password = ""
+
+    def require_login(self):
+        self.load_current_user_status()
+        if not self.is_logged_in:
+            return rx.redirect("/login")

@@ -82,14 +82,14 @@ app.add_page(
     create,
     route="/create",
     title="Создать объявление",
-    on_load=AuthState.load_current_user_status,
+    on_load=AuthState.require_login,
 )
 app.add_page(
     chats,
     route="/chats",
     title="Чаты",
     on_load=[
-        AuthState.load_current_user_status,
+        AuthState.require_login,
         ChatState.load_chats,
         ChatState.start_chat_message_poll,
     ],
@@ -98,25 +98,25 @@ app.add_page(
     favorites,
     route="/favorites",
     title="Избранное",
-    on_load=[AuthState.load_current_user_status, ListingState.load_listings],
+    on_load=[AuthState.require_login, ListingState.load_listings],
 )
 app.add_page(
     my_listings,
     route="/my-listings",
     title="Мои объявления",
-    on_load=[AuthState.load_current_user_status, ListingState.load_my_listings],
+    on_load=[AuthState.require_login, ListingState.load_my_listings],
 )
 app.add_page(
     admin,
     route="/admin",
     title="Админ-панель",
-    on_load=[AuthState.load_current_user_status, AdminState.load_admin_dashboard],
+    on_load=[AuthState.require_login, AdminState.load_admin_dashboard],
 )
 app.add_page(
     profile,
     route="/profile",
     title="Профиль",
-    on_load=AuthState.load_current_user_status,
+    on_load=AuthState.require_login,
 )
 app.add_page(health, route="/health", title="Health")
 app.add_page(terms, route="/terms", title="Правила площадки")

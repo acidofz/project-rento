@@ -1,5 +1,6 @@
 import json
 import uuid
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -283,10 +284,10 @@ class ListingState(rx.State):
             return False
 
     def set_title(self, value: str) -> None:
-        self.title = value
+        self.title = value[:200]
 
     def set_district(self, value: str) -> None:
-        self.district = value
+        self.district = value[:100]
 
     def set_rooms(self, value: str) -> None:
         self.rooms = max(1, int(value) if value else 1)
@@ -353,10 +354,10 @@ class ListingState(rx.State):
             self.listings_page += 1
 
     def set_edit_title(self, value: str) -> None:
-        self.edit_title = value
+        self.edit_title = value[:200]
 
     def set_edit_district(self, value: str) -> None:
-        self.edit_district = value
+        self.edit_district = value[:100]
 
     def set_edit_rooms(self, value: str) -> None:
         self.edit_rooms = max(1, int(value) if value else 1)
@@ -487,6 +488,9 @@ class ListingState(rx.State):
         if not self.edit_title or not self.edit_district or self.edit_price <= 0:
             self.error_message = "Для редактирования заполните все поля корректно."
             return
+        if len(self.edit_title) > 200 or len(self.edit_district) > 100:
+            self.error_message = "Заголовок — не более 200 символов, район — не более 100."
+            return
         sb = get_supabase()
         if sb is None:
             self.error_message = "Supabase не настроен. Проверьте .env."
@@ -541,6 +545,10 @@ class ListingState(rx.State):
             self.error_message = "Заполните поля: заголовок, район и корректную цену."
             self.success_message = ""
             return
+        if len(self.title) > 200 or len(self.district) > 100:
+            self.error_message = "Заголовок — не более 200 символов, район — не более 100."
+            self.success_message = ""
+            return
         sb = get_supabase()
         if sb is None:
             self.error_message = "Supabase не настроен. Проверьте .env."
@@ -555,6 +563,21 @@ class ListingState(rx.State):
                 return
             if self._is_current_user_blocked():
                 self.error_message = "Ваш аккаунт заблокирован. Публикация объявлений недоступна."
+                self.success_message = ""
+                return
+            since = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
+            daily_count = (
+                sb.table("listings")
+                .select("id", count="exact")
+                .eq("owner_id", str(user.id))
+                .gte("created_at", since)
+                .limit(0)
+                .execute()
+                .count
+                or 0
+            )
+            if daily_count >= 10:
+                self.error_message = "Максимум 10 объявлений за 24 часа. Попробуйте позже."
                 self.success_message = ""
                 return
             coords = _optional_lat_lng_from_form(self.create_latitude, self.create_longitude)

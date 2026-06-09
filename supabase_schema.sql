@@ -94,10 +94,10 @@ create index if not exists profiles_email_idx on public.profiles(email);
 alter table public.profiles enable row level security;
 
 drop policy if exists "Public read profiles" on public.profiles;
-create policy "Public read profiles"
+create policy "Authenticated read profiles"
 on public.profiles
 for select
-to authenticated, anon
+to authenticated
 using (true);
 
 drop policy if exists "Users upsert own profile" on public.profiles;
