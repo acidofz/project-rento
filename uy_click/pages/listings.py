@@ -10,14 +10,21 @@ from uy_click.state.listing_state import ListingState
 def skeleton_listing_card() -> rx.Component:
     return rx.card(
         rx.vstack(
-            rx.skeleton(height="160px", width="100%"),
-            rx.skeleton(height="18px", width="70%"),
-            rx.skeleton(height="14px", width="50%"),
-            rx.skeleton(height="22px", width="38%"),
-            spacing="3",
+            rx.skeleton(height="200px", width="100%", border_radius="0"),
+            rx.vstack(
+                rx.skeleton(height="18px", width="75%"),
+                rx.skeleton(height="14px", width="55%"),
+                rx.skeleton(height="22px", width="42%"),
+                spacing="2",
+                padding="0.75rem 0.875rem 0.875rem",
+                width="100%",
+            ),
+            spacing="0",
         ),
         width="100%",
         variant="surface",
+        padding="0",
+        style={"overflow": "hidden"},
     )
 
 
@@ -26,47 +33,47 @@ def listing_card_with_actions(listing) -> rx.Component:
     return rx.card(
         rx.vstack(
             listing_card_content(listing),
-            rx.spacer(),
+            # Action buttons
             rx.hstack(
                 rx.button(
                     rx.cond(
                         is_fav,
-                        rx.hstack(rx.icon("heart", size=13), rx.text("Убрать", size="1"), spacing="1", align="center"),
-                        rx.hstack(rx.icon("heart", size=13), rx.text("Избранное", size="1"), spacing="1", align="center"),
+                        rx.hstack(rx.icon("heart", size=12), rx.text("Убрать", size="1"), spacing="1", align="center"),
+                        rx.hstack(rx.icon("heart", size=12), rx.text("В избранное", size="1"), spacing="1", align="center"),
                     ),
                     on_click=ListingState.toggle_favorite(listing.id),
-                    variant="soft",
+                    variant="ghost",
                     size="1",
                     color_scheme=rx.cond(is_fav, "crimson", "gray"),
                 ),
                 rx.button(
                     rx.hstack(
-                        rx.icon("message-circle", size=13),
+                        rx.icon("message-circle", size=12),
                         rx.text("Написать", size="1"),
                         spacing="1",
                         align="center",
                     ),
                     on_click=ChatState.create_chat_with_user(listing.owner_id),
-                    variant="soft",
+                    variant="ghost",
                     size="1",
                     color_scheme="indigo",
                 ),
-                spacing="2",
+                spacing="1",
                 width="100%",
-                padding_top="0.25rem",
+                padding="0 0.875rem 0.75rem",
             ),
-            spacing="2",
+            spacing="0",
             width="100%",
             height="100%",
             align_items="start",
         ),
         variant="surface",
-        size="3",
+        padding="0",
         width="100%",
         border=rx.cond(
             listing.is_premium,
             "1px solid rgba(245, 158, 11, 0.3)",
-            "1px solid rgba(148, 163, 184, 0.15)",
+            "none",
         ),
         style=_CARD_STYLE,
         _hover=_CARD_HOVER,
