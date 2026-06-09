@@ -3,7 +3,8 @@ from pydantic import BaseModel
 import reflex as rx
 import time
 
-from uy_click.supabase_client import get_supabase
+from uy_click.supabase_client import get_supabase, get_supabase_authed
+from uy_click.state.auth_state import AuthState
 
 
 class ChatSummary(BaseModel):
@@ -30,7 +31,7 @@ class QuickContact(BaseModel):
     label: str
 
 
-class ChatState(rx.State):
+class ChatState(AuthState):
     chats: list[ChatSummary] = []
     selected_chat_id: int = 0
     messages: list[ChatMessage] = []
@@ -73,29 +74,6 @@ class ChatState(rx.State):
             async with self:
                 self._n_chat_poll_tasks = max(0, self._n_chat_poll_tasks - 1)
 
-    def _is_user_blocked(self) -> bool:
-        sb = get_supabase()
-        if sb is None:
-            return False
-        try:
-            user = getattr(sb.auth.get_user(), "user", None)
-            if user is None or not getattr(user, "id", None):
-                return False
-            row = (
-                sb.table("profiles")
-                .select("is_blocked")
-                .eq("id", user.id)
-                .limit(1)
-                .execute()
-                .data
-                or []
-            )
-            if not row:
-                return False
-            return bool(row[0].get("is_blocked", False))
-        except Exception:
-            return False
-
     @staticmethod
     def _format_timestamp(value: str) -> str:
         if not value:
@@ -122,22 +100,22 @@ class ChatState(rx.State):
         self.new_message = value
 
     def load_chats(self) -> None:
-        sb = get_supabase()
+        if not self.is_logged_in or not self.user_id:
+            self.error_message = "Войдите в аккаунт, чтобы использовать чат."
+            self.chats = []
+            return
+        sb = get_supabase_authed(self.access_token)
         if sb is None:
             self.error_message = "Supabase не настроен. Проверьте .env."
             return
         try:
-            user = getattr(sb.auth.get_user(), "user", None)
-            if user is None or not getattr(user, "id", None):
-                self.error_message = "Войдите в аккаунт, чтобы использовать чат."
-                self.chats = []
-                return
-            self.current_user_id = user.id
+            self.current_user_id = self.user_id
+            current_uid = self.user_id
             member_rows = self._with_retry(
                 lambda: (
                     sb.table("chat_members")
                     .select("chat_id")
-                    .eq("user_id", user.id)
+                    .eq("user_id", current_uid)
                     .execute()
                     .data
                     or []
@@ -168,7 +146,7 @@ class ChatState(rx.State):
                 if chat_id <= 0 or not member_user_id:
                     continue
                 user_ids.add(member_user_id)
-                if member_user_id != user.id:
+                if member_user_id != current_uid:
                     peer_by_chat_id[chat_id] = member_user_id
             self._load_user_labels(user_ids)
             rows = self._with_retry(
@@ -215,7 +193,7 @@ class ChatState(rx.State):
         if self.selected_chat_id <= 0:
             self.messages = []
             return
-        sb = get_supabase()
+        sb = get_supabase_authed(self.access_token)
         if sb is None:
             self.error_message = "Supabase не настроен. Проверьте .env."
             return
@@ -262,22 +240,22 @@ class ChatState(rx.State):
         if not self.peer_user_id:
             self.error_message = "Выберите контакт для старта чата."
             return
-        sb = get_supabase()
+        if not self.is_logged_in or not self.user_id:
+            self.error_message = "Войдите в аккаунт, чтобы создать чат."
+            return
+        if self.is_blocked:
+            self.error_message = "Ваш аккаунт заблокирован. Создание чатов недоступно."
+            return
+        if self.peer_user_id == self.user_id:
+            self.error_message = "Нельзя создать чат с самим собой."
+            return
+        sb = get_supabase_authed(self.access_token)
         if sb is None:
             self.error_message = "Supabase не настроен. Проверьте .env."
             return
         try:
-            user = getattr(sb.auth.get_user(), "user", None)
-            if user is None or not getattr(user, "id", None):
-                self.error_message = "Войдите в аккаунт, чтобы создать чат."
-                return
-            if self._is_user_blocked():
-                self.error_message = "Ваш аккаунт заблокирован. Создание чатов недоступно."
-                return
-            if self.peer_user_id == user.id:
-                self.error_message = "Нельзя создать чат с самим собой."
-                return
-            existing_chat_id = self._find_existing_chat_id(user.id, self.peer_user_id)
+            current_uid = self.user_id
+            existing_chat_id = self._find_existing_chat_id(current_uid, self.peer_user_id)
             if existing_chat_id > 0:
                 self.selected_chat_id = existing_chat_id
                 self.success_message = "Открыт существующий чат."
@@ -288,7 +266,7 @@ class ChatState(rx.State):
             chat_row = self._with_retry(
                 lambda: (
                     sb.table("chats")
-                    .insert({"created_by": user.id})
+                    .insert({"created_by": current_uid})
                     .execute()
                     .data
                     or []
@@ -301,7 +279,7 @@ class ChatState(rx.State):
                     lambda: (
                         sb.table("chats")
                         .select("id")
-                        .eq("created_by", user.id)
+                        .eq("created_by", current_uid)
                         .order("id", desc=True)
                         .limit(1)
                         .execute()
@@ -320,7 +298,7 @@ class ChatState(rx.State):
                 lambda: sb.table("chat_members")
                 .insert(
                     [
-                        {"chat_id": chat_id, "user_id": user.id},
+                        {"chat_id": chat_id, "user_id": current_uid},
                         {"chat_id": chat_id, "user_id": self.peer_user_id},
                     ],
                     returning="minimal",
@@ -337,7 +315,7 @@ class ChatState(rx.State):
             self.error_message = "Не удалось создать чат. Попробуйте еще раз."
 
     def _find_existing_chat_id(self, current_user_id: str, peer_user_id: str) -> int:
-        sb = get_supabase()
+        sb = get_supabase_authed(self.access_token)
         if sb is None:
             return 0
         rows = (
@@ -370,7 +348,7 @@ class ChatState(rx.State):
     def _load_user_labels(self, user_ids: set[str]) -> None:
         if not user_ids:
             return
-        sb = get_supabase()
+        sb = get_supabase_authed(self.access_token) if self.access_token else get_supabase()
         if sb is None:
             return
         try:
@@ -402,14 +380,14 @@ class ChatState(rx.State):
             pass
 
     def load_quick_contacts(self) -> None:
-        sb = get_supabase()
+        if not self.is_logged_in or not self.user_id:
+            self.quick_contacts = []
+            return
+        sb = get_supabase_authed(self.access_token)
         if sb is None:
             return
         try:
-            user = getattr(sb.auth.get_user(), "user", None)
-            if user is None or not getattr(user, "id", None):
-                self.quick_contacts = []
-                return
+            current_uid = self.user_id
             listing_rows = (
                 self._with_retry(
                     lambda: (
@@ -426,7 +404,7 @@ class ChatState(rx.State):
             owner_ids = {
                 str(row.get("owner_id", "") or "")
                 for row in listing_rows
-                if row.get("owner_id") and str(row.get("owner_id")) != user.id
+                if row.get("owner_id") and str(row.get("owner_id")) != current_uid
             }
             # Add peers from existing chats too.
             peer_ids = {chat.peer_user_id for chat in self.chats if chat.peer_user_id}
@@ -462,24 +440,24 @@ class ChatState(rx.State):
         if len(text) > 2000:
             self.error_message = "Сообщение слишком длинное (максимум 2000 символов)."
             return
-        sb = get_supabase()
+        if not self.is_logged_in or not self.user_id:
+            self.error_message = "Войдите в аккаунт, чтобы отправлять сообщения."
+            return
+        if self.is_blocked:
+            self.error_message = "Ваш аккаунт заблокирован. Отправка сообщений недоступна."
+            return
+        sb = get_supabase_authed(self.access_token)
         if sb is None:
             self.error_message = "Supabase не настроен. Проверьте .env."
             return
         try:
-            user = getattr(sb.auth.get_user(), "user", None)
-            if user is None or not getattr(user, "id", None):
-                self.error_message = "Войдите в аккаунт, чтобы отправлять сообщения."
-                return
-            if self._is_user_blocked():
-                self.error_message = "Ваш аккаунт заблокирован. Отправка сообщений недоступна."
-                return
+            current_uid = self.user_id
             self._with_retry(
                 lambda: sb.table("messages")
                 .insert(
                     {
                         "chat_id": self.selected_chat_id,
-                        "sender_id": user.id,
+                        "sender_id": current_uid,
                         "body": text,
                     },
                     returning="minimal",

@@ -2,7 +2,8 @@ import os
 
 import reflex as rx
 
-from uy_click.supabase_client import get_supabase, get_supabase_admin
+from uy_click.supabase_client import get_supabase_admin
+from uy_click.state.auth_state import AuthState
 
 
 def _admin_ids_from_env() -> set[str]:
@@ -10,7 +11,7 @@ def _admin_ids_from_env() -> set[str]:
     return {item.strip() for item in raw.split(",") if item.strip()}
 
 
-class AdminState(rx.State):
+class AdminState(AuthState):
     is_admin: bool = False
     listings_count: int = 0
     chats_count: int = 0
@@ -23,21 +24,15 @@ class AdminState(rx.State):
     latest_users: list[dict] = []
 
     def _check_admin(self):
-        sb = get_supabase()
-        if sb is None:
-            self.is_admin = False
-            self.error_message = "База не подключена. Проверьте переменные окружения Supabase."
-            return None
-        user = getattr(sb.auth.get_user(), "user", None)
-        if user is None or not getattr(user, "id", None):
+        if not self.is_logged_in or not self.user_id:
             self.is_admin = False
             self.error_message = "Войдите под учётной записью администратора."
             return None
-        self.is_admin = user.id in _admin_ids_from_env()
+        self.is_admin = self.user_id in _admin_ids_from_env()
         if not self.is_admin:
             self.error_message = "Недостаточно прав для этой страницы."
             return None
-        return user
+        return self.user_id
 
     def load_admin_dashboard(self) -> None:
         user = self._check_admin()

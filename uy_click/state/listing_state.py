@@ -8,7 +8,7 @@ from pydantic import BaseModel
 import reflex as rx
 from storage3.exceptions import StorageApiError
 
-from uy_click.supabase_client import get_supabase
+from uy_click.supabase_client import get_supabase, get_supabase_authed
 from uy_click.utils.helpers import format_price_uzs
 
 LISTING_IMAGES_BUCKET = "listing-images"
@@ -119,7 +119,10 @@ class Listing(BaseModel):
     is_premium: bool = False
 
 
-class ListingState(rx.State):
+from uy_click.state.auth_state import AuthState  # noqa: E402 — must be after Listing model
+
+
+class ListingState(AuthState):
     """Listings state backed by Supabase table `listings`."""
 
     listings: list[Listing] = [
@@ -252,36 +255,12 @@ class ListingState(rx.State):
             ext = ".jpg"
         path = f"{user_id}/{uuid.uuid4().hex}{ext}"
         content_type = _content_type_for_ext(ext)
-        _ensure_supabase_storage_uses_current_jwt(sb)
         sb.storage.from_(LISTING_IMAGES_BUCKET).upload(
             path,
             data,
             file_options={"content-type": content_type, "upsert": "true"},
         )
         return sb.storage.from_(LISTING_IMAGES_BUCKET).get_public_url(path)
-
-    def _is_current_user_blocked(self) -> bool:
-        sb = get_supabase()
-        if sb is None:
-            return False
-        try:
-            user = getattr(sb.auth.get_user(), "user", None)
-            if user is None or not getattr(user, "id", None):
-                return False
-            row = (
-                sb.table("profiles")
-                .select("is_blocked")
-                .eq("id", user.id)
-                .limit(1)
-                .execute()
-                .data
-                or []
-            )
-            if not row:
-                return False
-            return bool(row[0].get("is_blocked", False))
-        except Exception:
-            return False
 
     def set_title(self, value: str) -> None:
         self.title = value[:200]
@@ -426,13 +405,12 @@ class ListingState(rx.State):
         self.error_message = ""
         if not files:
             return
-        sb = get_supabase()
+        if not self.is_logged_in or not self.user_id:
+            self.error_message = "Войдите в аккаунт, чтобы загрузить фото."
+            return
+        sb = get_supabase_authed(self.access_token)
         if sb is None:
             self.error_message = "Supabase не настроен. Проверьте .env."
-            return
-        user = getattr(sb.auth.get_user(), "user", None)
-        if user is None or not getattr(user, "id", None):
-            self.error_message = "Войдите в аккаунт, чтобы загрузить фото."
             return
         try:
             data = await _read_upload_bytes(files[0])
@@ -441,7 +419,7 @@ class ListingState(rx.State):
                 yield rx.clear_selected_files("listing-photo-create")
                 return
             name = files[0].filename or "photo.jpg"
-            url = self._upload_listing_image_bytes(sb, str(user.id), data, name)
+            url = self._upload_listing_image_bytes(sb, self.user_id, data, name)
             self.pending_image_url = url
             self.pending_image_name = name
         except Exception as exc:
@@ -452,13 +430,12 @@ class ListingState(rx.State):
         self.error_message = ""
         if not files or self.edit_listing_id <= 0:
             return
-        sb = get_supabase()
+        if not self.is_logged_in or not self.user_id:
+            self.error_message = "Войдите в аккаунт, чтобы загрузить фото."
+            return
+        sb = get_supabase_authed(self.access_token)
         if sb is None:
             self.error_message = "Supabase не настроен. Проверьте .env."
-            return
-        user = getattr(sb.auth.get_user(), "user", None)
-        if user is None or not getattr(user, "id", None):
-            self.error_message = "Войдите в аккаунт, чтобы загрузить фото."
             return
         try:
             data = await _read_upload_bytes(files[0])
@@ -467,7 +444,7 @@ class ListingState(rx.State):
                 yield rx.clear_selected_files("listing-photo-edit")
                 return
             name = files[0].filename or "photo.jpg"
-            url = self._upload_listing_image_bytes(sb, str(user.id), data, name)
+            url = self._upload_listing_image_bytes(sb, self.user_id, data, name)
             self.edit_image_url = url
         except Exception as exc:
             self.error_message = _humanize_storage_upload_error(exc)
@@ -491,7 +468,7 @@ class ListingState(rx.State):
         if len(self.edit_title) > 200 or len(self.edit_district) > 100:
             self.error_message = "Заголовок — не более 200 символов, район — не более 100."
             return
-        sb = get_supabase()
+        sb = get_supabase_authed(self.access_token)
         if sb is None:
             self.error_message = "Supabase не настроен. Проверьте .env."
             return
@@ -525,7 +502,7 @@ class ListingState(rx.State):
             self.error_message = "Не удалось обновить объявление. Попробуйте еще раз."
 
     def delete_listing(self, listing_id: int) -> None:
-        sb = get_supabase()
+        sb = get_supabase_authed(self.access_token)
         if sb is None:
             self.error_message = "Supabase не настроен. Проверьте .env."
             return
@@ -549,27 +526,25 @@ class ListingState(rx.State):
             self.error_message = "Заголовок — не более 200 символов, район — не более 100."
             self.success_message = ""
             return
-        sb = get_supabase()
+        if not self.is_logged_in or not self.user_id:
+            self.error_message = "Для публикации войдите в аккаунт."
+            self.success_message = ""
+            return
+        if self.is_blocked:
+            self.error_message = "Ваш аккаунт заблокирован. Публикация объявлений недоступна."
+            self.success_message = ""
+            return
+        sb = get_supabase_authed(self.access_token)
         if sb is None:
             self.error_message = "Supabase не настроен. Проверьте .env."
             self.success_message = ""
             return
         try:
-            user_response = sb.auth.get_user()
-            user = getattr(user_response, "user", None)
-            if user is None or not getattr(user, "id", None):
-                self.error_message = "Для публикации войдите в аккаунт."
-                self.success_message = ""
-                return
-            if self._is_current_user_blocked():
-                self.error_message = "Ваш аккаунт заблокирован. Публикация объявлений недоступна."
-                self.success_message = ""
-                return
             since = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
             daily_count = (
                 sb.table("listings")
                 .select("id", count="exact")
-                .eq("owner_id", str(user.id))
+                .eq("owner_id", self.user_id)
                 .gte("created_at", since)
                 .limit(0)
                 .execute()
@@ -591,7 +566,7 @@ class ListingState(rx.State):
                 "district": self.district,
                 "rooms": self.rooms,
                 "price": self.price,
-                "owner_id": user.id,
+                "owner_id": self.user_id,
             }
             if self.pending_image_url:
                 row["image_url"] = self.pending_image_url
@@ -663,24 +638,21 @@ class ListingState(rx.State):
         self.listings_loading = False
 
     def load_my_listings(self) -> None:
-        sb = get_supabase()
+        if not self.is_logged_in or not self.user_id:
+            self.my_listings = []
+            return
+        sb = get_supabase_authed(self.access_token)
         if sb is None:
             self.error_message = "Supabase не настроен. Проверьте .env."
             self.success_message = ""
             return
         try:
-            user_response = sb.auth.get_user()
-            user = getattr(user_response, "user", None)
-            if user is None or not getattr(user, "id", None):
-                self.my_listings = []
-                self.error_message = "Войдите в аккаунт, чтобы видеть свои объявления."
-                return
             response = (
                 sb.table("listings")
                 .select(
                     "id,title,district,rooms,price,owner_id,image_url,latitude,longitude,is_premium"
                 )
-                .eq("owner_id", user.id)
+                .eq("owner_id", self.user_id)
                 .order("id", desc=True)
                 .execute()
             )
@@ -706,19 +678,17 @@ class ListingState(rx.State):
             self.error_message = "Не удалось загрузить ваши объявления. Обновите страницу."
 
     def load_favorites(self) -> None:
-        sb = get_supabase()
+        if not self.is_logged_in or not self.user_id:
+            self.favorite_listing_ids = []
+            return
+        sb = get_supabase_authed(self.access_token)
         if sb is None:
             return
         try:
-            user_response = sb.auth.get_user()
-            user = getattr(user_response, "user", None)
-            if user is None or not getattr(user, "id", None):
-                self.favorite_listing_ids = []
-                return
             response = (
                 sb.table("favorites")
                 .select("listing_id")
-                .eq("user_id", user.id)
+                .eq("user_id", self.user_id)
                 .execute()
             )
             rows = getattr(response, "data", []) or []
@@ -731,23 +701,21 @@ class ListingState(rx.State):
             self.favorite_listing_ids = []
 
     def toggle_favorite(self, listing_id: int) -> None:
-        sb = get_supabase()
+        if not self.is_logged_in or not self.user_id:
+            self.error_message = "Войдите в аккаунт, чтобы добавлять в избранное."
+            return
+        sb = get_supabase_authed(self.access_token)
         if sb is None:
             self.error_message = "Supabase не настроен. Проверьте .env."
             return
         try:
-            user_response = sb.auth.get_user()
-            user = getattr(user_response, "user", None)
-            if user is None or not getattr(user, "id", None):
-                self.error_message = "Войдите в аккаунт, чтобы добавлять в избранное."
-                return
             if listing_id in self.favorite_listing_ids:
-                sb.table("favorites").delete().eq("user_id", user.id).eq(
+                sb.table("favorites").delete().eq("user_id", self.user_id).eq(
                     "listing_id", listing_id
                 ).execute()
             else:
                 sb.table("favorites").insert(
-                    {"user_id": user.id, "listing_id": listing_id}
+                    {"user_id": self.user_id, "listing_id": listing_id}
                 ).execute()
             self.error_message = ""
             self.load_favorites()

@@ -1,10 +1,9 @@
 import reflex as rx
 
-from uy_click.supabase_client import get_supabase
+from uy_click.supabase_client import get_supabase, get_supabase_authed
 
 
 def _humanize_auth_error(exc: Exception, action: str) -> str:
-    """Map common Supabase auth errors to actionable user messages."""
     text = str(exc).lower()
     if "email rate limit exceeded" in text:
         return (
@@ -19,7 +18,11 @@ def _humanize_auth_error(exc: Exception, action: str) -> str:
 
 
 class AuthState(rx.State):
-    """Auth state backed by Supabase Auth."""
+    """Auth state backed by Supabase Auth.
+
+    access_token is stored in localStorage so it survives page reloads
+    without sharing state across different browser sessions.
+    """
 
     email: str = ""
     password: str = ""
@@ -28,10 +31,12 @@ class AuthState(rx.State):
     user_name: str = "Гость"
     is_blocked: bool = False
     error_message: str = ""
+    # Persisted in localStorage — survives page refresh, isolated per browser tab
+    access_token: str = rx.LocalStorage("", name="uy_click_access_token")
 
     @staticmethod
-    def _upsert_profile(user_id: str, email: str) -> None:
-        sb = get_supabase()
+    def _upsert_profile(user_id: str, email: str, access_token: str) -> None:
+        sb = get_supabase_authed(access_token) if access_token else get_supabase()
         if sb is None or not user_id:
             return
         username = (email.split("@")[0] if email else "").strip() or "user"
@@ -44,12 +49,22 @@ class AuthState(rx.State):
             pass
 
     def load_current_user_status(self) -> None:
+        if not self.access_token:
+            self.is_logged_in = False
+            self.user_id = ""
+            self.user_name = "Гость"
+            self.is_blocked = False
+            return
         sb = get_supabase()
         if sb is None:
             return
         try:
-            user = getattr(sb.auth.get_user(), "user", None)
+            # Validate the stored token against Supabase without using shared session
+            user_resp = sb.auth.get_user(jwt=self.access_token)
+            user = getattr(user_resp, "user", None)
             if user is None or not getattr(user, "id", None):
+                # Token expired or invalid — clear it
+                self.access_token = ""
                 self.is_logged_in = False
                 self.user_id = ""
                 self.user_name = "Гость"
@@ -57,8 +72,11 @@ class AuthState(rx.State):
                 return
             self.is_logged_in = True
             self.user_id = user.id or ""
+            sb_authed = get_supabase_authed(self.access_token)
+            if sb_authed is None:
+                return
             row = (
-                sb.table("profiles")
+                sb_authed.table("profiles")
                 .select("username,email,is_blocked")
                 .eq("id", self.user_id)
                 .limit(1)
@@ -89,12 +107,16 @@ class AuthState(rx.State):
         if len(self.password) < 6:
             self.error_message = "Пароль должен содержать не менее 6 символов."
             return
-        sb = get_supabase()
-        if sb is None:
+        # Use a fresh (non-singleton) client so sign_up doesn't pollute the shared anon client
+        from supabase import create_client
+        from uy_click.supabase_client import SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_KEY
+        key = SUPABASE_ANON_KEY or SUPABASE_KEY
+        if not SUPABASE_URL or not key:
             self.error_message = "Supabase не настроен. Проверьте .env."
             return
         try:
-            response = sb.auth.sign_up({"email": self.email, "password": self.password})
+            fresh_sb = create_client(SUPABASE_URL, key)
+            response = fresh_sb.auth.sign_up({"email": self.email, "password": self.password})
             user = getattr(response, "user", None)
             session = getattr(response, "session", None)
             if user is None:
@@ -102,9 +124,14 @@ class AuthState(rx.State):
                 return
             self.user_name = user.email.split("@")[0] if user.email else "Пользователь"
             self.user_id = user.id or ""
-            self._upsert_profile(self.user_id, user.email or "")
-            self.is_logged_in = session is not None
-            self.load_current_user_status()
+            if session is not None:
+                self.access_token = getattr(session, "access_token", "") or ""
+                self.is_logged_in = bool(self.access_token)
+            else:
+                self.is_logged_in = False
+            self._upsert_profile(self.user_id, user.email or "", self.access_token)
+            if self.is_logged_in:
+                self.load_current_user_status()
             self.error_message = (
                 ""
                 if self.is_logged_in
@@ -120,34 +147,46 @@ class AuthState(rx.State):
         if len(self.password) < 6:
             self.error_message = "Пароль должен содержать не менее 6 символов."
             return
-        sb = get_supabase()
-        if sb is None:
+        # Fresh client so login doesn't contaminate the shared anon singleton
+        from supabase import create_client
+        from uy_click.supabase_client import SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_KEY
+        key = SUPABASE_ANON_KEY or SUPABASE_KEY
+        if not SUPABASE_URL or not key:
             self.error_message = "Supabase не настроен. Проверьте .env."
             return
         try:
-            response = sb.auth.sign_in_with_password(
+            fresh_sb = create_client(SUPABASE_URL, key)
+            response = fresh_sb.auth.sign_in_with_password(
                 {"email": self.email, "password": self.password}
             )
             user = getattr(response, "user", None)
-            if user is None:
+            session = getattr(response, "session", None)
+            if user is None or session is None:
                 self.error_message = "Неверный email или пароль."
                 return
+            self.access_token = getattr(session, "access_token", "") or ""
             self.user_name = user.email.split("@")[0] if user.email else "Пользователь"
             self.user_id = user.id or ""
-            self._upsert_profile(self.user_id, user.email or "")
-            self.is_logged_in = True
+            self.is_logged_in = bool(self.access_token)
+            self._upsert_profile(self.user_id, user.email or "", self.access_token)
             self.load_current_user_status()
             self.error_message = ""
         except Exception as exc:
             self.error_message = _humanize_auth_error(exc, "входа")
 
     def logout(self) -> None:
-        sb = get_supabase()
-        if sb is not None:
+        # Sign out using an authed client so the token is revoked server-side
+        if self.access_token:
             try:
-                sb.auth.sign_out()
+                from supabase import create_client
+                from uy_click.supabase_client import SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_KEY
+                key = SUPABASE_ANON_KEY or SUPABASE_KEY
+                if SUPABASE_URL and key:
+                    fresh_sb = create_client(SUPABASE_URL, key)
+                    fresh_sb.auth.admin.sign_out(self.access_token)
             except Exception:
                 pass
+        self.access_token = ""
         self.is_logged_in = False
         self.user_id = ""
         self.user_name = "Гость"
