@@ -117,13 +117,14 @@ def listings() -> rx.Component:
                             variant="soft",
                             size="2",
                         ),
-                        rx.select(
-                            [
-                                ("Новые первые", "newest"),
-                                ("Сначала дешевле", "price_asc"),
-                                ("Сначала дороже", "price_desc"),
-                                ("Больше комнат", "rooms_desc"),
-                            ],
+                        rx.select.root(
+                            rx.select.trigger(placeholder="Сортировка"),
+                            rx.select.content(
+                                rx.select.item("Новые первые", value="newest"),
+                                rx.select.item("Сначала дешевле", value="price_asc"),
+                                rx.select.item("Сначала дороже", value="price_desc"),
+                                rx.select.item("Больше комнат", value="rooms_desc"),
+                            ),
                             value=ListingState.sort_by,
                             on_change=ListingState.set_sort_by,
                             width="160px",
