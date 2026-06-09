@@ -3,7 +3,7 @@ from pydantic import BaseModel
 import reflex as rx
 import time
 
-from rento.supabase_client import get_supabase
+from uy_click.supabase_client import get_supabase
 
 
 class ChatSummary(BaseModel):

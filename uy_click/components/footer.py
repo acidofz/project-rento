@@ -1,6 +1,6 @@
 import reflex as rx
 
-from rento.utils.helpers import current_year
+from uy_click.utils.helpers import current_year
 
 
 def site_footer() -> rx.Component:

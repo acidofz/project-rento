@@ -1,7 +1,7 @@
 [project]
-name = "rento"
+name = "uy-click"
 version = "0.1.0"
-description = "RENTO - p2p rental platform built with Reflex"
+description = "uy-click.uz - p2p rental platform built with Reflex"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [

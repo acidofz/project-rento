@@ -1,18 +1,18 @@
 import reflex as rx
 
-from rento.components.footer import site_footer
-from rento.components.navbar import navbar
-from rento.state.auth_state import AuthState
+from uy_click.components.footer import site_footer
+from uy_click.components.navbar import navbar
+from uy_click.state.auth_state import AuthState
 
 
-def register() -> rx.Component:
+def login() -> rx.Component:
     return rx.vstack(
         navbar(),
         rx.container(
             rx.vstack(
-                rx.heading("Регистрация", size="7"),
+                rx.heading("Вход", size="7"),
                 rx.text(
-                    "Один пароль — и можно размещать объявления.",
+                    "Чтобы публиковать объявления и отвечать в чате.",
                     size="2",
                     color=rx.color("gray", 10),
                 ),
@@ -29,10 +29,10 @@ def register() -> rx.Component:
                     on_change=AuthState.set_password,
                     width="100%",
                 ),
-                rx.button("Создать аккаунт", on_click=AuthState.register, width="100%"),
+                rx.button("Войти", on_click=AuthState.login, width="100%"),
                 rx.link(
-                    "Уже есть аккаунт? Войти",
-                    href="/login",
+                    "Нет аккаунта? Зарегистрироваться",
+                    href="/register",
                     size="2",
                     color=rx.color("blue", 11),
                 ),

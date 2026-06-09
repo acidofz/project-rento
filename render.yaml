@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: project-rento
+    name: uy-click
     runtime: python
     plan: free
     buildCommand: uv sync --frozen && uv run reflex export --no-zip --env prod

@@ -8,7 +8,7 @@ P2P-платформа для прямой аренды жилья в Ташке
 
 **Фокус сейчас** — вывести сервис к реальным пользователям (стабильный прод, доверие, первый трафик), а не готовить демо под хакатон.
 
-Чек-лист открытого запуска (Go / No-Go): см. **[LAUNCH_CHECKLIST.md](LAUNCH_CHECKLIST.md)**.
+Чек-лист открытого запуска (релизное решение «выпускать / нет»): см. **[LAUNCH_CHECKLIST.md](LAUNCH_CHECKLIST.md)**.
 
 ## Планируемая монетизация (дорожная карта)
 
@@ -100,14 +100,14 @@ P2P-платформа для прямой аренды жилья в Ташке
 ## 📁 Актуальная структура проекта
 
 ```bash
-project-rento/
+uy-click/
 ├── .github/
 │   └── workflows/
 │       └── ci.yml
 ├── LAUNCH_CHECKLIST.md
 ├── scripts/
 │   └── smoke_deploy.sh
-├── rento/
+├── uy_click/
 │   ├── components/
 │   │   ├── footer.py
 │   │   ├── listing_card.py
@@ -136,7 +136,7 @@ project-rento/
 │   │   └── listing_state.py
 │   ├── utils/helpers.py
 │   ├── ready_layer.py
-│   ├── rento.py
+│   ├── uy_click.py
 │   └── supabase_client.py
 ├── assets/
 │   ├── icon.svg
@@ -180,7 +180,7 @@ uv run reflex run
 ## 🧪 Сборка перед деплоем
 
 ```bash
-uv run python -m compileall rento
+uv run python -m compileall uy_click
 uv run reflex export
 ```
 
@@ -207,7 +207,7 @@ uv run reflex export
 ### Railway
 
 1. Подключи репозиторий в Railway.
-2. Проверь, что выбран правильный branch и root (где лежат `pyproject.toml` и `rento/`).
+2. Проверь, что выбран правильный branch и root (где лежат `pyproject.toml` и `uy_click/`).
 3. Добавь ENV:
    - `SUPABASE_URL`
    - `SUPABASE_ANON_KEY`

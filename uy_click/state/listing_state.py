@@ -7,8 +7,8 @@ from pydantic import BaseModel
 import reflex as rx
 from storage3.exceptions import StorageApiError
 
-from rento.supabase_client import get_supabase
-from rento.utils.helpers import format_price_uzs
+from uy_click.supabase_client import get_supabase
+from uy_click.utils.helpers import format_price_uzs
 
 LISTING_IMAGES_BUCKET = "listing-images"
 LISTINGS_PAGE_SIZE = 12

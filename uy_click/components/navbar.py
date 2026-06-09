@@ -1,6 +1,6 @@
 import reflex as rx
 
-from rento.state.auth_state import AuthState
+from uy_click.state.auth_state import AuthState
 
 
 def navbar() -> rx.Component:

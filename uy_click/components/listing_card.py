@@ -1,7 +1,7 @@
 import reflex as rx
 
-from rento.state.listing_state import Listing
-from rento.utils.helpers import format_price_uzs
+from uy_click.state.listing_state import Listing
+from uy_click.utils.helpers import format_price_uzs
 
 
 def listing_card(listing: Listing) -> rx.Component:

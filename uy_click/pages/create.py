@@ -1,8 +1,8 @@
 import reflex as rx
 
-from rento.components.footer import site_footer
-from rento.components.navbar import navbar
-from rento.state.listing_state import ListingState
+from uy_click.components.footer import site_footer
+from uy_click.components.navbar import navbar
+from uy_click.state.listing_state import ListingState
 
 
 def create() -> rx.Component:

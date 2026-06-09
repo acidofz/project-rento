@@ -2,7 +2,7 @@ import os
 
 import reflex as rx
 
-from rento.supabase_client import get_supabase, get_supabase_admin
+from uy_click.supabase_client import get_supabase, get_supabase_admin
 
 
 def _admin_ids_from_env() -> set[str]:

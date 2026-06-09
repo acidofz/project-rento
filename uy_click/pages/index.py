@@ -1,8 +1,8 @@
 import reflex as rx
 
-from rento.components.bento import bento_hero, bento_tile
-from rento.components.footer import site_footer
-from rento.components.navbar import navbar
+from uy_click.components.bento import bento_hero, bento_tile
+from uy_click.components.footer import site_footer
+from uy_click.components.navbar import navbar
 
 
 def index() -> rx.Component:

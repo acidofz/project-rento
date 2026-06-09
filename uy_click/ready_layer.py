@@ -14,7 +14,7 @@ def ready(_request: Request) -> JSONResponse:
     Возвращает 200, если Supabase не настроен (локальная разработка) или запрос прошёл.
     Возвращает 503, если клиент настроен, но БД недоступна.
     """
-    from rento.supabase_client import get_supabase
+    from uy_click.supabase_client import get_supabase
 
     sb = get_supabase()
     if sb is None:
