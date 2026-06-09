@@ -340,12 +340,12 @@ class ChatState(rx.State):
         sb = get_supabase()
         if sb is None:
             return 0
-        my_rows = (
+        rows = (
             self._with_retry(
                 lambda: (
                     sb.table("chat_members")
-                    .select("chat_id")
-                    .eq("user_id", current_user_id)
+                    .select("chat_id,user_id")
+                    .in_("user_id", [current_user_id, peer_user_id])
                     .execute()
                     .data
                     or []
@@ -353,25 +353,19 @@ class ChatState(rx.State):
             )
             or []
         )
-        peer_rows = (
-            self._with_retry(
-                lambda: (
-                    sb.table("chat_members")
-                    .select("chat_id")
-                    .eq("user_id", peer_user_id)
-                    .execute()
-                    .data
-                    or []
-                )
-            )
-            or []
-        )
-        my_chat_ids = {int(r.get("chat_id", 0) or 0) for r in my_rows if r.get("chat_id") is not None}
-        peer_chat_ids = {
-            int(r.get("chat_id", 0) or 0) for r in peer_rows if r.get("chat_id") is not None
-        }
-        common_ids = sorted([x for x in my_chat_ids.intersection(peer_chat_ids) if x > 0], reverse=True)
-        return common_ids[0] if common_ids else 0
+        my_chats: set[int] = set()
+        peer_chats: set[int] = set()
+        for row in rows:
+            chat_id = int(row.get("chat_id", 0) or 0)
+            uid = str(row.get("user_id", "") or "")
+            if chat_id <= 0:
+                continue
+            if uid == current_user_id:
+                my_chats.add(chat_id)
+            elif uid == peer_user_id:
+                peer_chats.add(chat_id)
+        common = sorted(my_chats & peer_chats, reverse=True)
+        return common[0] if common else 0
 
     def _load_user_labels(self, user_ids: set[str]) -> None:
         if not user_ids:

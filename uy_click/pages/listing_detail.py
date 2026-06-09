@@ -108,6 +108,7 @@ def listing_detail() -> rx.Component:
                                         ListingState.detail_owner_id
                                     ),
                                     variant="soft",
+                                    disabled=ListingState.detail_owner_id == "",
                                 ),
                                 spacing="2",
                             ),

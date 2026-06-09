@@ -130,7 +130,7 @@ def chats() -> rx.Component:
                         width="100%",
                         align_items="stretch",
                     ),
-                    columns="2",
+                    columns=rx.breakpoints(initial="1", md="2"),
                     spacing="6",
                     width="100%",
                 ),

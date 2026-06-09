@@ -289,7 +289,7 @@ class ListingState(rx.State):
         self.district = value
 
     def set_rooms(self, value: str) -> None:
-        self.rooms = int(value) if value else 1
+        self.rooms = max(1, int(value) if value else 1)
 
     def set_price(self, value: str) -> None:
         self.price = int(value) if value else 0
@@ -365,7 +365,7 @@ class ListingState(rx.State):
         self.edit_district = value
 
     def set_edit_rooms(self, value: str) -> None:
-        self.edit_rooms = int(value) if value else 1
+        self.edit_rooms = max(1, int(value) if value else 1)
 
     def set_edit_price(self, value: str) -> None:
         self.edit_price = int(value) if value else 0
@@ -422,7 +422,7 @@ class ListingState(rx.State):
             f"window.__uyClickInitMap({json.dumps(markers, ensure_ascii=True)});"
         )
 
-    async def upload_create_photo(self, files: list[rx.UploadFile]) -> None:
+    async def upload_create_photo(self, files: list[rx.UploadFile]):
         self.error_message = ""
         if not files:
             return
@@ -438,6 +438,7 @@ class ListingState(rx.State):
             data = await _read_upload_bytes(files[0])
             if len(data) > 5_000_000:
                 self.error_message = "Файл больше 5 МБ. Выберите другое изображение."
+                yield rx.clear_selected_files("listing-photo-create")
                 return
             name = files[0].filename or "photo.jpg"
             url = self._upload_listing_image_bytes(sb, str(user.id), data, name)
@@ -445,8 +446,9 @@ class ListingState(rx.State):
             self.pending_image_name = name
         except Exception as exc:
             self.error_message = _humanize_storage_upload_error(exc)
+            yield rx.clear_selected_files("listing-photo-create")
 
-    async def upload_edit_photo(self, files: list[rx.UploadFile]) -> None:
+    async def upload_edit_photo(self, files: list[rx.UploadFile]):
         self.error_message = ""
         if not files or self.edit_listing_id <= 0:
             return
@@ -462,12 +464,14 @@ class ListingState(rx.State):
             data = await _read_upload_bytes(files[0])
             if len(data) > 5_000_000:
                 self.error_message = "Файл больше 5 МБ. Выберите другое изображение."
+                yield rx.clear_selected_files("listing-photo-edit")
                 return
             name = files[0].filename or "photo.jpg"
             url = self._upload_listing_image_bytes(sb, str(user.id), data, name)
             self.edit_image_url = url
         except Exception as exc:
             self.error_message = _humanize_storage_upload_error(exc)
+            yield rx.clear_selected_files("listing-photo-edit")
 
     def clear_create_photo(self):
         self.pending_image_url = ""
@@ -500,7 +504,6 @@ class ListingState(rx.State):
                 "rooms": self.edit_rooms,
                 "price": self.edit_price,
                 "image_url": self.edit_image_url or None,
-                "is_premium": self.edit_is_premium,
             }
             if lat is not None:
                 update_row["latitude"] = lat
@@ -567,7 +570,6 @@ class ListingState(rx.State):
                 "rooms": self.rooms,
                 "price": self.price,
                 "owner_id": user.id,
-                "is_premium": self.create_is_premium,
             }
             if self.pending_image_url:
                 row["image_url"] = self.pending_image_url

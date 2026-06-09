@@ -48,15 +48,17 @@ class AdminState(rx.State):
             self.error_message = "Сервисный ключ Supabase не задан — админ-режим недоступен."
             return
         try:
-            self.listings_count = len(
-                sb_admin.table("listings").select("id").execute().data or []
+            self.listings_count = (
+                sb_admin.table("listings").select("id", count="exact").limit(0).execute().count or 0
             )
-            self.chats_count = len(sb_admin.table("chats").select("id").execute().data or [])
-            self.messages_count = len(
-                sb_admin.table("messages").select("id").execute().data or []
+            self.chats_count = (
+                sb_admin.table("chats").select("id", count="exact").limit(0).execute().count or 0
             )
-            self.users_count = len(
-                sb_admin.table("profiles").select("id").execute().data or []
+            self.messages_count = (
+                sb_admin.table("messages").select("id", count="exact").limit(0).execute().count or 0
+            )
+            self.users_count = (
+                sb_admin.table("profiles").select("id", count="exact").limit(0).execute().count or 0
             )
             self.latest_listings = (
                 sb_admin.table("listings")

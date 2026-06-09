@@ -86,6 +86,9 @@ class AuthState(rx.State):
         if not self.email or not self.password:
             self.error_message = "Заполните email и пароль."
             return
+        if len(self.password) < 6:
+            self.error_message = "Пароль должен содержать не менее 6 символов."
+            return
         sb = get_supabase()
         if sb is None:
             self.error_message = "Supabase не настроен. Проверьте .env."
@@ -113,6 +116,9 @@ class AuthState(rx.State):
     def login(self) -> None:
         if not self.email or not self.password:
             self.error_message = "Введите email и пароль."
+            return
+        if len(self.password) < 6:
+            self.error_message = "Пароль должен содержать не менее 6 символов."
             return
         sb = get_supabase()
         if sb is None:
