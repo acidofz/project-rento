@@ -75,7 +75,6 @@ app.add_page(
     title=ListingState.listing_detail_page_title,
     on_load=[
         AuthState.load_current_user_status,
-        ListingState.load_listings,
         ListingState.load_listing_detail,
     ],
 )

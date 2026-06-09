@@ -217,8 +217,8 @@ drop policy if exists "Users create chats" on public.chats;
 create policy "Users create chats"
 on public.chats
 for insert
-to public
-with check (true);
+to authenticated
+with check (created_by = auth.uid());
 
 drop policy if exists "Members view chat_members" on public.chat_members;
 create policy "Members view chat_members"
@@ -231,8 +231,14 @@ drop policy if exists "Users insert own chat_members" on public.chat_members;
 create policy "Users insert own chat_members"
 on public.chat_members
 for insert
-to public
-with check (true);
+to authenticated
+with check (
+    user_id = auth.uid()
+    or exists (
+        select 1 from public.chats c
+        where c.id = chat_id and c.created_by = auth.uid()
+    )
+);
 
 drop policy if exists "Members view messages" on public.messages;
 create policy "Members view messages"

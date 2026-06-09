@@ -464,6 +464,9 @@ class ChatState(rx.State):
         if not text:
             self.error_message = "Введите сообщение."
             return
+        if len(text) > 2000:
+            self.error_message = "Сообщение слишком длинное (максимум 2000 символов)."
+            return
         sb = get_supabase()
         if sb is None:
             self.error_message = "Supabase не настроен. Проверьте .env."
