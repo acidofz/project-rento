@@ -119,10 +119,10 @@ def listings() -> rx.Component:
                         ),
                         rx.select(
                             [
-                                rx.option("Новые первые", value="newest"),
-                                rx.option("Сначала дешевле", value="price_asc"),
-                                rx.option("Сначала дороже", value="price_desc"),
-                                rx.option("Больше комнат", value="rooms_desc"),
+                                ("Новые первые", "newest"),
+                                ("Сначала дешевле", "price_asc"),
+                                ("Сначала дороже", "price_desc"),
+                                ("Больше комнат", "rooms_desc"),
                             ],
                             value=ListingState.sort_by,
                             on_change=ListingState.set_sort_by,
