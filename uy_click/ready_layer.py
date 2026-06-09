@@ -1,4 +1,4 @@
-"""Дополнительные ASGI-маршруты поверх Reflex (см. `api_transformer` в `rento.py`)."""
+"""Дополнительные ASGI-маршруты поверх Reflex (см. `api_transformer` в `uy_click.py`)."""
 
 from __future__ import annotations
 

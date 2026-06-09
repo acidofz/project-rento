@@ -54,7 +54,7 @@ def bento_hero(
 ) -> rx.Component:
     """Крупная герой-плитка на всю ширину сетки."""
     inner = rx.vstack(
-        rx.badge("RENTO", color_scheme="indigo", variant="soft", size="2"),
+        rx.badge("UY-CLICK", color_scheme="indigo", variant="soft", size="2"),
         rx.heading(title, size="8", weight="bold", style={"letter_spacing": "-0.02em"}),
         rx.text(
             subtitle,

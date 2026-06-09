@@ -21,7 +21,7 @@ jobs:
         run: uv sync
 
       - name: Python compile check
-        run: uv run python -m compileall rento
+        run: uv run python -m compileall uy_click
 
       - name: Reflex export (production build)
         run: uv run reflex export

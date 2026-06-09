@@ -32,7 +32,7 @@ def site_footer() -> rx.Component:
                     ),
                     rx.spacer(),
                     rx.text(
-                        f"© {current_year()} RENTO",
+                        f"© {current_year()} UY-CLICK",
                         size="1",
                         color=rx.color("gray", 9),
                     ),

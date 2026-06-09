@@ -40,7 +40,7 @@ app = rx.App(
     ],
 )
 
-app.add_page(index, route="/", title="RENTO")
+app.add_page(index, route="/", title="UY-CLICK")
 app.add_page(
     login,
     route="/login",

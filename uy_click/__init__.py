@@ -1,1 +1,1 @@
-"""RENTO Reflex application package."""
+"""UY-CLICK Reflex application package."""

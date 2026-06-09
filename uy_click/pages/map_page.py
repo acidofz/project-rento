@@ -18,14 +18,14 @@ def map_page() -> rx.Component:
                     color=rx.color("gray", 10),
                 ),
                 rx.box(
-                    id="rento-map",
+                    id="uy-click-map",
                     width="100%",
                     height="70vh",
                     border_radius="md",
                     border=f"1px solid {rx.color('gray', 5)}",
                     overflow="hidden",
                 ),
-                rx.script(src="/rento_map.js"),
+                rx.script(src="/uy_click_map.js"),
                 rx.cond(
                     ListingState.error_message,
                     rx.callout(ListingState.error_message, color_scheme="red"),

@@ -1,1 +1,1 @@
-"""Utility helpers for RENTO."""
+"""Utility helpers for UY-CLICK."""

@@ -6,7 +6,7 @@ from uy_click.state.auth_state import AuthState
 def navbar() -> rx.Component:
     return rx.hstack(
         rx.hstack(
-            rx.heading("RENTO", size="6"),
+            rx.heading("UY-CLICK", size="6"),
             rx.text("Прямая аренда", color=rx.color("gray", 10)),
             spacing="3",
             align="center",

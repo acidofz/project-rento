@@ -419,7 +419,7 @@ class ListingState(rx.State):
                 }
             )
         return rx.call_script(
-            f"window.__rentoInitMap({json.dumps(markers, ensure_ascii=True)});"
+            f"window.__uyClickInitMap({json.dumps(markers, ensure_ascii=True)});"
         )
 
     async def upload_create_photo(self, files: list[rx.UploadFile]) -> None:
@@ -765,8 +765,8 @@ class ListingState(rx.State):
     def listing_detail_page_title(self) -> str:
         t = (self.detail_title or "").strip()
         if not t:
-            return "Объявление · RENTO"
-        return f"{t} · RENTO"
+            return "Объявление · UY-CLICK"
+        return f"{t} · UY-CLICK"
 
     @rx.var(cache=False)
     def is_editing(self) -> bool:

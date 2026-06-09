@@ -10,13 +10,13 @@
       .replace(/"/g, "&quot;");
   }
 
-  window.__rentoInitMap = function (markers) {
-    var el = document.getElementById("rento-map");
+  window.__uyClickInitMap = function (markers) {
+    var el = document.getElementById("uy-click-map");
     if (!el || typeof L === "undefined") return;
 
-    if (el.__rentoMap) {
-      el.__rentoMap.remove();
-      el.__rentoMap = null;
+    if (el.__uyClickMap) {
+      el.__uyClickMap.remove();
+      el.__uyClickMap = null;
     }
     el.innerHTML = "";
 
@@ -25,7 +25,7 @@
       maxZoom: 19,
       attribution: "&copy; OpenStreetMap",
     }).addTo(map);
-    el.__rentoMap = map;
+    el.__uyClickMap = map;
 
     var bounds = [];
     for (var i = 0; i < markers.length; i++) {
