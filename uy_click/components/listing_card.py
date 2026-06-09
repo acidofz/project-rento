@@ -6,7 +6,7 @@ from uy_click.utils.helpers import format_price_uzs
 
 def listing_card_content(listing: Listing) -> rx.Component:
     return rx.vstack(
-        # Image — bleeds to card edges
+        # Image — bleeds to card edges, top corners clipped
         rx.box(
             rx.cond(
                 listing.image_url != "",
@@ -47,6 +47,8 @@ def listing_card_content(listing: Listing) -> rx.Component:
             ),
             position="relative",
             width="100%",
+            overflow="hidden",
+            border_radius="var(--radius-3) var(--radius-3) 0 0",
         ),
         # Content
         rx.vstack(
