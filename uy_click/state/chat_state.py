@@ -415,6 +415,7 @@ class ChatState(rx.State):
                     lambda: (
                         sb.table("listings")
                         .select("owner_id")
+                        .limit(200)
                         .execute()
                         .data
                         or []

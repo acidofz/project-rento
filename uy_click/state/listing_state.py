@@ -170,10 +170,8 @@ class ListingState(rx.State):
     edit_image_url_before_upload: str = ""
     create_latitude: str = ""
     create_longitude: str = ""
-    create_is_premium: bool = False
     edit_latitude: str = ""
     edit_longitude: str = ""
-    edit_is_premium: bool = False
     detail_id: int = 0
     detail_title: str = ""
     detail_district: str = ""
@@ -301,17 +299,11 @@ class ListingState(rx.State):
     def set_create_longitude(self, value: str) -> None:
         self.create_longitude = value
 
-    def toggle_create_is_premium(self) -> None:
-        self.create_is_premium = not self.create_is_premium
-
     def set_edit_latitude(self, value: str) -> None:
         self.edit_latitude = value
 
     def set_edit_longitude(self, value: str) -> None:
         self.edit_longitude = value
-
-    def toggle_edit_is_premium(self) -> None:
-        self.edit_is_premium = not self.edit_is_premium
 
     def set_search_query(self, value: str) -> None:
         self.search_query = value
@@ -356,7 +348,7 @@ class ListingState(rx.State):
             self.listings_page -= 1
 
     def listings_next_page(self) -> None:
-        if self.listings_page < self._listings_total_pages_int():
+        if self.listings_page < self.listings_total_pages:
             self.listings_page += 1
 
     def set_edit_title(self, value: str) -> None:
@@ -389,7 +381,6 @@ class ListingState(rx.State):
         self.edit_longitude = (
             str(target.longitude) if target.longitude is not None else ""
         )
-        self.edit_is_premium = bool(target.is_premium)
         self.error_message = ""
 
     def cancel_edit(self) -> None:
@@ -402,7 +393,6 @@ class ListingState(rx.State):
         self.edit_image_url_before_upload = ""
         self.edit_latitude = ""
         self.edit_longitude = ""
-        self.edit_is_premium = False
 
     def render_map_leaflet(self) -> Any:
         markers: list[dict[str, Any]] = []
@@ -591,7 +581,6 @@ class ListingState(rx.State):
             self.price = 0
             self.create_latitude = ""
             self.create_longitude = ""
-            self.create_is_premium = False
             self.pending_image_url = ""
             self.pending_image_name = ""
             self.error_message = ""
@@ -733,7 +722,8 @@ class ListingState(rx.State):
         except Exception:
             self.error_message = "Не удалось обновить избранное. Попробуйте еще раз."
 
-    def _filtered_listings_core(self) -> list[Listing]:
+    @rx.var(cache=True)
+    def _filtered_sorted_listings(self) -> list[Listing]:
         query = self.search_query.strip().lower()
         district_query = self.filter_district.strip().lower()
         result: list[Listing] = []
@@ -754,22 +744,10 @@ class ListingState(rx.State):
         if self.sort_by == "price_asc":
             return sorted(result, key=lambda item: (not item.is_premium, item.price, -item.id))
         if self.sort_by == "price_desc":
-            return sorted(
-                result,
-                key=lambda item: (not item.is_premium, -item.price, -item.id),
-            )
+            return sorted(result, key=lambda item: (not item.is_premium, -item.price, -item.id))
         if self.sort_by == "rooms_desc":
-            return sorted(
-                result,
-                key=lambda item: (not item.is_premium, -item.rooms, -item.id),
-            )
+            return sorted(result, key=lambda item: (not item.is_premium, -item.rooms, -item.id))
         return sorted(result, key=lambda item: (not item.is_premium, -item.id))
-
-    def _listings_total_pages_int(self) -> int:
-        n = len(self._filtered_listings_core())
-        if n == 0:
-            return 1
-        return (n + LISTINGS_PAGE_SIZE - 1) // LISTINGS_PAGE_SIZE
 
     @rx.var(cache=False)
     def listing_detail_page_title(self) -> str:
@@ -778,35 +756,37 @@ class ListingState(rx.State):
             return "Объявление · UY-CLICK"
         return f"{t} · UY-CLICK"
 
-    @rx.var(cache=False)
+    @rx.var(cache=True)
     def is_editing(self) -> bool:
         return self.edit_listing_id > 0
 
-    @rx.var(cache=False)
+    @rx.var(cache=True)
     def filtered_listings(self) -> list[Listing]:
-        return self._filtered_listings_core()
+        return self._filtered_sorted_listings
 
-    @rx.var(cache=False)
+    @rx.var(cache=True)
     def paginated_filtered_listings(self) -> list[Listing]:
-        full = self._filtered_listings_core()
-        tp = self._listings_total_pages_int()
+        full = self._filtered_sorted_listings
+        n = len(full)
+        tp = (n + LISTINGS_PAGE_SIZE - 1) // LISTINGS_PAGE_SIZE or 1
         page = min(max(1, self.listings_page), tp)
         start = (page - 1) * LISTINGS_PAGE_SIZE
         return full[start : start + LISTINGS_PAGE_SIZE]
 
-    @rx.var(cache=False)
+    @rx.var(cache=True)
     def listings_filtered_count(self) -> int:
-        return len(self._filtered_listings_core())
+        return len(self._filtered_sorted_listings)
 
-    @rx.var(cache=False)
+    @rx.var(cache=True)
     def listings_total_pages(self) -> int:
-        return self._listings_total_pages_int()
+        n = len(self._filtered_sorted_listings)
+        return (n + LISTINGS_PAGE_SIZE - 1) // LISTINGS_PAGE_SIZE or 1
 
-    @rx.var(cache=False)
+    @rx.var(cache=True)
     def favorite_listings(self) -> list[Listing]:
         favorite_ids = set(self.favorite_listing_ids)
         return [item for item in self.listings if item.id in favorite_ids]
 
-    @rx.var(cache=False)
+    @rx.var(cache=True)
     def has_filtered_listings(self) -> bool:
-        return len(self._filtered_listings_core()) > 0
+        return bool(self._filtered_sorted_listings)
