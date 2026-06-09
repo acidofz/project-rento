@@ -172,6 +172,7 @@ class ListingState(rx.State):
     create_longitude: str = ""
     edit_latitude: str = ""
     edit_longitude: str = ""
+    listings_loading: bool = False
     detail_id: int = 0
     detail_title: str = ""
     detail_district: str = ""
@@ -514,7 +515,7 @@ class ListingState(rx.State):
             self.error_message = ""
             self.cancel_edit()
             self.load_my_listings()
-            self.load_listings()
+            self._do_load_listings()
             return rx.clear_selected_files("listing-photo-edit")
         except Exception:
             self.error_message = "Не удалось обновить объявление. Попробуйте еще раз."
@@ -531,7 +532,7 @@ class ListingState(rx.State):
             self.success_message = "Объявление удалено."
             self.error_message = ""
             self.load_my_listings()
-            self.load_listings()
+            self._do_load_listings()
         except Exception:
             self.error_message = "Не удалось удалить объявление. Попробуйте еще раз."
 
@@ -585,14 +586,15 @@ class ListingState(rx.State):
             self.pending_image_name = ""
             self.error_message = ""
             self.success_message = "Объявление опубликовано."
-            self.load_listings()
+            self._do_load_listings()
             self.load_my_listings()
             return rx.clear_selected_files("listing-photo-create")
         except Exception:
             self.error_message = "Не удалось сохранить объявление. Попробуйте еще раз."
             self.success_message = ""
 
-    def load_listings(self) -> None:
+    def _do_load_listings(self) -> None:
+        """Internal: fetch listings from DB. Call this from other event handlers."""
         sb = get_supabase()
         if sb is None:
             self.error_message = "Supabase не настроен. Проверьте .env."
@@ -629,6 +631,13 @@ class ListingState(rx.State):
             self.load_favorites()
         except Exception:
             self.error_message = "Не удалось загрузить объявления. Обновите страницу."
+
+    def load_listings(self):
+        """Public event handler: shows loading skeleton, then fetches."""
+        self.listings_loading = True
+        yield
+        self._do_load_listings()
+        self.listings_loading = False
 
     def load_my_listings(self) -> None:
         sb = get_supabase()
