@@ -8,6 +8,17 @@ def listing_card_content(listing: Listing) -> rx.Component:
     return rx.vstack(
         # Image — bleeds to card edges, top corners clipped
         rx.box(
+            # Placeholder always in background — visible when image_url is
+            # empty OR when the URL is set but the image fails to load (404)
+            rx.center(
+                rx.icon("image", size=32, color=rx.color("gray", 6)),
+                width="100%",
+                height="200px",
+                background=rx.color("gray", 2),
+                position="absolute",
+                top="0",
+                left="0",
+            ),
             rx.cond(
                 listing.image_url != "",
                 rx.image(
@@ -17,13 +28,9 @@ def listing_card_content(listing: Listing) -> rx.Component:
                     object_fit="cover",
                     alt=listing.title,
                     display="block",
+                    position="relative",
                 ),
-                rx.center(
-                    rx.icon("image", size=32, color=rx.color("gray", 6)),
-                    width="100%",
-                    height="200px",
-                    background=rx.color("gray", 2),
-                ),
+                rx.fragment(),
             ),
             rx.cond(
                 listing.is_premium,
