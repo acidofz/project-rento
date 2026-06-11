@@ -2,6 +2,7 @@ import reflex as rx
 
 from uy_click.components.footer import site_footer
 from uy_click.components.navbar import navbar
+from uy_click.i18n import t
 from uy_click.state.auth_state import AuthState
 
 
@@ -14,7 +15,7 @@ class PricingPreviewState(rx.State):
         self.billing_cycle = cycle
 
 
-def _feature_item(label: str, included: bool) -> rx.Component:
+def _feature_item(label: rx.Component | str, included: bool) -> rx.Component:
     return rx.hstack(
         rx.cond(
             included,
@@ -28,7 +29,7 @@ def _feature_item(label: str, included: bool) -> rx.Component:
 
 
 def _animated_button(
-    text: str,
+    text: rx.Component | str,
     *,
     size: str = "2",
     variant: str = "soft",
@@ -57,7 +58,7 @@ def _plan_card(
     name: str,
     subtitle_badge: rx.Component,
     price_block: rx.Component,
-    description: str,
+    description: rx.Component | str,
     features: list[rx.Component],
     cta: rx.Component,
     background: str,
@@ -97,17 +98,17 @@ def _plan_card(
     )
 
 
-def _comparison_row(feature: str, free_included: bool, pro_included: bool) -> rx.Component:
+def _comparison_row(feature: rx.Component | str, free_included: bool, pro_included: bool) -> rx.Component:
     return rx.hstack(
         rx.text(feature, size="2", color=rx.color("gray", 11)),
         rx.spacer(),
         rx.badge(
-            rx.cond(free_included, "Есть", "Нет"),
+            rx.cond(free_included, t("profile_btn_active"), "—"),
             color_scheme=rx.cond(free_included, "grass", "gray"),
             variant="soft",
         ),
         rx.badge(
-            rx.cond(pro_included, "Есть", "Нет"),
+            rx.cond(pro_included, t("profile_btn_active"), "—"),
             color_scheme=rx.cond(pro_included, "grass", "gray"),
             variant="soft",
         ),
@@ -122,15 +123,15 @@ def profile() -> rx.Component:
             rx.text(
                 rx.cond(
                     PricingPreviewState.billing_cycle == "month",
-                    "$12 / мес",
-                    "$115 / год",
+                    "$12 / mo",
+                    "$115 / yr",
                 ),
                 size="2",
                 color=rx.color("gray", 10),
             ),
             rx.cond(
                 PricingPreviewState.billing_cycle == "year",
-                rx.badge("Экономия 20%", color_scheme="grass", variant="soft"),
+                rx.badge(t("profile_save_20"), color_scheme="grass", variant="soft"),
                 rx.fragment(),
             ),
             spacing="2",
@@ -140,8 +141,8 @@ def profile() -> rx.Component:
         rx.text(
             rx.cond(
                 PricingPreviewState.billing_cycle == "month",
-                "Оплата ежемесячно, можно отменить в любой момент.",
-                "Эквивалент $9.6 в месяц при оплате за год.",
+                t("profile_billing_month_note"),
+                t("profile_billing_year_note"),
             ),
             size="1",
             color=rx.color("gray", 9),
@@ -153,16 +154,16 @@ def profile() -> rx.Component:
 
     free_card = _plan_card(
         name="Free",
-        subtitle_badge=rx.badge("Текущий план", color_scheme="gray", variant="soft"),
-        price_block=rx.text("0$ / мес", size="2", color=rx.color("gray", 10)),
-        description="Для старта: публикация объявлений и базовый поиск.",
+        subtitle_badge=rx.badge(t("profile_current_plan"), color_scheme="gray", variant="soft"),
+        price_block=rx.text("$0 / mo", size="2", color=rx.color("gray", 10)),
+        description=t("profile_free_desc"),
         features=[
-            _feature_item("Базовое размещение", True),
-            _feature_item("Фильтры и карта", True),
-            _feature_item("Приоритет в выдаче", False),
-            _feature_item("Расширенная аналитика", False),
+            _feature_item(t("profile_feat_basic"), True),
+            _feature_item(t("profile_feat_filters"), True),
+            _feature_item(t("profile_feat_priority"), False),
+            _feature_item(t("profile_feat_analytics"), False),
         ],
-        cta=_animated_button("Активен", variant="soft", color_scheme="gray", size="2"),
+        cta=_animated_button(t("profile_btn_active"), variant="soft", color_scheme="gray", size="2"),
         background=rx.color("gray", 2),
         border_style="1px solid rgba(100, 116, 139, 0.2)",
     )
@@ -170,52 +171,52 @@ def profile() -> rx.Component:
     pro_card = _plan_card(
         name="PRO",
         subtitle_badge=rx.hstack(
-            rx.badge("Most popular", color_scheme="indigo", variant="solid"),
-            rx.badge("Рекомендуем", color_scheme="indigo", variant="soft"),
+            rx.badge("Most popular", color_scheme="teal", variant="solid"),
+            rx.badge(t("profile_recommended"), color_scheme="teal", variant="soft"),
             spacing="2",
             flex_wrap="wrap",
         ),
         price_block=pro_price,
-        description="Для активных арендодателей: больше охват и больше контроля.",
+        description=t("profile_pro_desc"),
         features=[
-            _feature_item("Базовое размещение", True),
-            _feature_item("Фильтры и карта", True),
-            _feature_item("Приоритет в выдаче", True),
-            _feature_item("Расширенная аналитика", True),
+            _feature_item(t("profile_feat_basic"), True),
+            _feature_item(t("profile_feat_filters"), True),
+            _feature_item(t("profile_feat_priority"), True),
+            _feature_item(t("profile_feat_analytics"), True),
         ],
         cta=rx.hstack(
             rx.link(
                 _animated_button(
-                    "Подробнее",
+                    t("profile_btn_learn"),
                     size="2",
                     variant="solid",
-                    color_scheme="indigo",
+                    color_scheme="teal",
                 ),
                 href="/monetization",
                 underline="none",
             ),
-            rx.badge("Скоро", color_scheme="indigo", variant="outline", size="2"),
+            rx.badge(t("profile_coming_soon"), color_scheme="teal", variant="outline", size="2"),
             spacing="2",
             flex_wrap="wrap",
         ),
-        background=rx.color("indigo", 2),
-        border_style="1px solid rgba(79, 70, 229, 0.2)",
+        background=rx.color("teal", 2),
+        border_style="1px solid rgba(13, 148, 136, 0.2)",
     )
 
     comparison_table = rx.card(
         rx.vstack(
-            rx.heading("Сравнение планов", size="4"),
+            rx.heading(t("profile_comparison_title"), size="4"),
             rx.hstack(
-                rx.text("Функция", size="2", color=rx.color("gray", 10)),
+                rx.text(t("profile_comparison_feature"), size="2", color=rx.color("gray", 10)),
                 rx.spacer(),
                 rx.badge("Free", color_scheme="gray", variant="soft"),
-                rx.badge("PRO", color_scheme="indigo", variant="soft"),
+                rx.badge("PRO", color_scheme="teal", variant="soft"),
                 width="100%",
             ),
-            _comparison_row("Публикация объявлений", True, True),
-            _comparison_row("Карта и фильтры", True, True),
-            _comparison_row("Приоритет в выдаче", False, True),
-            _comparison_row("Расширенная статистика", False, True),
+            _comparison_row(t("profile_feat_basic"), True, True),
+            _comparison_row(t("profile_feat_filters"), True, True),
+            _comparison_row(t("profile_feat_priority"), False, True),
+            _comparison_row(t("profile_feat_stats"), False, True),
             spacing="2",
             align_items="start",
             width="100%",
@@ -236,26 +237,26 @@ def profile() -> rx.Component:
     subscription_section = rx.card(
         rx.vstack(
             rx.hstack(
-                rx.heading("Подписка", size="5"),
+                rx.heading(t("profile_subscription_title"), size="5"),
                 rx.spacer(),
-                rx.badge("Визуальная демо-версия", color_scheme="blue", variant="soft"),
+                rx.badge(t("profile_demo_badge"), color_scheme="blue", variant="soft"),
                 width="100%",
                 align_items="center",
             ),
             rx.text(
-                "Платежи пока не подключены. Ниже — как будет выглядеть тарифная логика.",
+                t("profile_demo_desc"),
                 size="2",
                 color=rx.color("gray", 10),
             ),
             rx.hstack(
                 rx.button(
-                    "Месяц",
+                    t("profile_billing_month"),
                     size="2",
                     variant=rx.cond(
                         PricingPreviewState.billing_cycle == "month", "solid", "soft"
                     ),
                     color_scheme=rx.cond(
-                        PricingPreviewState.billing_cycle == "month", "indigo", "gray"
+                        PricingPreviewState.billing_cycle == "month", "teal", "gray"
                     ),
                     on_click=PricingPreviewState.set_billing_cycle("month"),
                     style={"transition": "all 160ms ease"},
@@ -263,13 +264,13 @@ def profile() -> rx.Component:
                     _active={"transform": "translateY(0) scale(0.98)"},
                 ),
                 rx.button(
-                    "Год",
+                    t("profile_billing_year"),
                     size="2",
                     variant=rx.cond(
                         PricingPreviewState.billing_cycle == "year", "solid", "soft"
                     ),
                     color_scheme=rx.cond(
-                        PricingPreviewState.billing_cycle == "year", "indigo", "gray"
+                        PricingPreviewState.billing_cycle == "year", "teal", "gray"
                     ),
                     on_click=PricingPreviewState.set_billing_cycle("year"),
                     style={"transition": "all 160ms ease"},
@@ -309,19 +310,19 @@ def profile() -> rx.Component:
         navbar(),
         rx.container(
             rx.vstack(
-                rx.heading("Профиль", size="7"),
-                rx.text("Имя в сервисе", size="2", color=rx.color("gray", 10)),
+                rx.heading(t("profile_title"), size="7"),
+                rx.text(t("profile_name_label"), size="2", color=rx.color("gray", 10)),
                 rx.badge(AuthState.user_name, size="3", color_scheme="blue"),
-                rx.text("Вход", size="2", color=rx.color("gray", 10)),
+                rx.text(t("profile_auth_label"), size="2", color=rx.color("gray", 10)),
                 rx.badge(
-                    rx.cond(AuthState.is_logged_in, "Авторизован", "Гость"),
+                    rx.cond(AuthState.is_logged_in, t("profile_logged_in"), t("profile_guest")),
                     color_scheme=rx.cond(AuthState.is_logged_in, "green", "gray"),
                     size="3",
                 ),
                 rx.cond(
                     AuthState.is_blocked,
                     rx.callout(
-                        "Аккаунт заблокирован: чат и новые объявления недоступны.",
+                        t("profile_blocked_msg"),
                         color_scheme="red",
                     ),
                     rx.fragment(),

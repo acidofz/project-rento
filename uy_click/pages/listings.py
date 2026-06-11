@@ -3,6 +3,7 @@ import reflex as rx
 from uy_click.components.listing_card import listing_card_content, _CARD_STYLE, _CARD_HOVER
 from uy_click.components.footer import site_footer
 from uy_click.components.navbar import navbar
+from uy_click.i18n import t
 from uy_click.state.chat_state import ChatState
 from uy_click.state.listing_state import ListingState
 
@@ -10,7 +11,7 @@ from uy_click.state.listing_state import ListingState
 def skeleton_listing_card() -> rx.Component:
     return rx.card(
         rx.vstack(
-            rx.skeleton(height="200px", width="100%", border_radius="0"),
+            rx.skeleton(height="240px", width="100%", border_radius="0"),
             rx.vstack(
                 rx.skeleton(height="18px", width="75%"),
                 rx.skeleton(height="14px", width="55%"),
@@ -33,13 +34,12 @@ def listing_card_with_actions(listing) -> rx.Component:
     return rx.card(
         rx.vstack(
             listing_card_content(listing),
-            # Action buttons
             rx.hstack(
                 rx.button(
                     rx.cond(
                         is_fav,
-                        rx.hstack(rx.icon("heart", size=12), rx.text("Убрать", size="1"), spacing="1", align="center"),
-                        rx.hstack(rx.icon("heart", size=12), rx.text("В избранное", size="1"), spacing="1", align="center"),
+                        rx.hstack(rx.icon("heart", size=12), t("btn_fav_remove"), spacing="1", align="center"),
+                        rx.hstack(rx.icon("heart", size=12), t("btn_fav_add"), spacing="1", align="center"),
                     ),
                     on_click=ListingState.toggle_favorite(listing.id),
                     variant="ghost",
@@ -49,14 +49,14 @@ def listing_card_with_actions(listing) -> rx.Component:
                 rx.button(
                     rx.hstack(
                         rx.icon("message-circle", size=12),
-                        rx.text("Написать", size="1"),
+                        t("btn_message"),
                         spacing="1",
                         align="center",
                     ),
                     on_click=ChatState.create_chat_with_user(listing.owner_id),
                     variant="ghost",
                     size="1",
-                    color_scheme="indigo",
+                    color_scheme="teal",
                 ),
                 spacing="1",
                 width="100%",
@@ -80,37 +80,19 @@ def listing_card_with_actions(listing) -> rx.Component:
     )
 
 
-def _filter_input(label: str, placeholder: str, value, on_change, type: str = "text") -> rx.Component:
-    return rx.vstack(
-        rx.text(label, size="1", color=rx.color("gray", 10), weight="medium"),
-        rx.input(
-            placeholder=placeholder,
-            type=type,
-            min=0 if type == "number" else None,
-            value=value,
-            on_change=on_change,
-            width="100%",
-        ),
-        spacing="1",
-        align_items="start",
-        width="100%",
-    )
-
-
 def listings() -> rx.Component:
     return rx.vstack(
         navbar(),
         rx.container(
             rx.vstack(
-                # ── Header ──
+                # Header
                 rx.hstack(
                     rx.vstack(
-                        rx.heading("Объявления", size="7"),
-                        rx.text(
-                            ListingState.listings_filtered_count,
-                            " объявлений",
-                            size="2",
-                            color=rx.color("gray", 10),
+                        rx.heading(t("listings_title"), size="7"),
+                        rx.hstack(
+                            rx.text(ListingState.listings_filtered_count, size="2", color=rx.color("gray", 10)),
+                            rx.text(t("listings_count_suffix"), size="2", color=rx.color("gray", 10)),
+                            spacing="1",
                         ),
                         spacing="0",
                         align_items="start",
@@ -119,22 +101,22 @@ def listings() -> rx.Component:
                     rx.hstack(
                         rx.button(
                             rx.icon("map", size=14),
-                            "Карта",
+                            t("btn_map"),
                             on_click=rx.redirect("/map"),
                             variant="soft",
                             size="2",
                         ),
                         rx.select.root(
-                            rx.select.trigger(placeholder="Сортировка"),
+                            rx.select.trigger(placeholder=t("sort_placeholder")),
                             rx.select.content(
-                                rx.select.item("Новые первые", value="newest"),
-                                rx.select.item("Сначала дешевле", value="price_asc"),
-                                rx.select.item("Сначала дороже", value="price_desc"),
-                                rx.select.item("Больше комнат", value="rooms_desc"),
+                                rx.select.item(t("sort_newest"), value="newest"),
+                                rx.select.item(t("sort_price_asc"), value="price_asc"),
+                                rx.select.item(t("sort_price_desc"), value="price_desc"),
+                                rx.select.item(t("sort_rooms_desc"), value="rooms_desc"),
                             ),
                             value=ListingState.sort_by,
                             on_change=ListingState.set_sort_by,
-                            width="160px",
+                            width="175px",
                         ),
                         spacing="2",
                         flex_wrap="wrap",
@@ -144,14 +126,14 @@ def listings() -> rx.Component:
                     flex_wrap="wrap",
                     gap="3",
                 ),
-                # ── Filters ──
+                # Filters
                 rx.card(
                     rx.vstack(
                         rx.grid(
                             rx.vstack(
-                                rx.text("Поиск", size="1", color=rx.color("gray", 10), weight="medium"),
+                                rx.text(t("filter_search_label"), size="1", color=rx.color("gray", 10), weight="medium"),
                                 rx.input(
-                                    placeholder="Район или название",
+                                    placeholder=t("filter_search_ph"),
                                     value=ListingState.search_query,
                                     on_change=ListingState.set_search_query,
                                     width="100%",
@@ -161,9 +143,9 @@ def listings() -> rx.Component:
                                 width="100%",
                             ),
                             rx.vstack(
-                                rx.text("Район", size="1", color=rx.color("gray", 10), weight="medium"),
+                                rx.text(t("filter_district_label"), size="1", color=rx.color("gray", 10), weight="medium"),
                                 rx.input(
-                                    placeholder="Все районы",
+                                    placeholder=t("filter_district_ph"),
                                     value=ListingState.filter_district,
                                     on_change=ListingState.set_filter_district,
                                     width="100%",
@@ -173,10 +155,10 @@ def listings() -> rx.Component:
                                 width="100%",
                             ),
                             rx.vstack(
-                                rx.text("Цена (сум/мес)", size="1", color=rx.color("gray", 10), weight="medium"),
+                                rx.text(t("filter_price_label"), size="1", color=rx.color("gray", 10), weight="medium"),
                                 rx.hstack(
                                     rx.input(
-                                        placeholder="от",
+                                        placeholder=t("filter_from"),
                                         type="number",
                                         min=0,
                                         value=ListingState.min_price,
@@ -184,7 +166,7 @@ def listings() -> rx.Component:
                                         width="100%",
                                     ),
                                     rx.input(
-                                        placeholder="до",
+                                        placeholder=t("filter_to"),
                                         type="number",
                                         min=0,
                                         value=ListingState.max_price,
@@ -199,10 +181,10 @@ def listings() -> rx.Component:
                                 width="100%",
                             ),
                             rx.vstack(
-                                rx.text("Комнат", size="1", color=rx.color("gray", 10), weight="medium"),
+                                rx.text(t("filter_rooms_label"), size="1", color=rx.color("gray", 10), weight="medium"),
                                 rx.hstack(
                                     rx.input(
-                                        placeholder="от",
+                                        placeholder=t("filter_from"),
                                         type="number",
                                         min=0,
                                         value=ListingState.min_rooms,
@@ -210,7 +192,7 @@ def listings() -> rx.Component:
                                         width="100%",
                                     ),
                                     rx.input(
-                                        placeholder="до",
+                                        placeholder=t("filter_to"),
                                         type="number",
                                         min=0,
                                         value=ListingState.max_rooms,
@@ -230,7 +212,7 @@ def listings() -> rx.Component:
                         ),
                         rx.button(
                             rx.icon("x", size=14),
-                            "Сбросить фильтры",
+                            t("btn_reset"),
                             on_click=ListingState.reset_filters,
                             variant="ghost",
                             size="1",
@@ -243,13 +225,13 @@ def listings() -> rx.Component:
                     size="2",
                     width="100%",
                 ),
-                # ── Error ──
+                # Error
                 rx.cond(
                     ListingState.error_message,
                     rx.callout(ListingState.error_message, color_scheme="red"),
                     rx.fragment(),
                 ),
-                # ── Grid ──
+                # Grid
                 rx.cond(
                     ListingState.listings_loading,
                     rx.grid(
@@ -257,7 +239,9 @@ def listings() -> rx.Component:
                         skeleton_listing_card(),
                         skeleton_listing_card(),
                         skeleton_listing_card(),
-                        columns=rx.breakpoints(initial="1", sm="2"),
+                        skeleton_listing_card(),
+                        skeleton_listing_card(),
+                        columns=rx.breakpoints(initial="1", sm="2", lg="3"),
                         spacing="4",
                         width="100%",
                     ),
@@ -268,29 +252,15 @@ def listings() -> rx.Component:
                                 ListingState.paginated_filtered_listings,
                                 listing_card_with_actions,
                             ),
-                            columns=rx.breakpoints(initial="1", sm="2"),
+                            columns=rx.breakpoints(initial="1", sm="2", lg="3"),
                             spacing="4",
                             width="100%",
                         ),
                         rx.vstack(
                             rx.icon("search-x", size=40, color=rx.color("gray", 6)),
-                            rx.text(
-                                "Ничего не подошло.",
-                                size="3",
-                                weight="medium",
-                                color=rx.color("gray", 11),
-                            ),
-                            rx.text(
-                                "Попробуйте изменить фильтры или сбросить поиск.",
-                                size="2",
-                                color=rx.color("gray", 9),
-                            ),
-                            rx.button(
-                                "Сбросить фильтры",
-                                on_click=ListingState.reset_filters,
-                                variant="soft",
-                                size="2",
-                            ),
+                            rx.text(t("no_results_title"), size="3", weight="medium", color=rx.color("gray", 11)),
+                            rx.text(t("no_results_subtitle"), size="2", color=rx.color("gray", 9)),
+                            rx.button(t("btn_reset"), on_click=ListingState.reset_filters, variant="soft", size="2"),
                             align_items="center",
                             spacing="2",
                             padding_y="3rem",
@@ -298,7 +268,7 @@ def listings() -> rx.Component:
                         ),
                     ),
                 ),
-                # ── Pagination ──
+                # Pagination
                 rx.cond(
                     ListingState.listings_total_pages > 1,
                     rx.hstack(
@@ -310,22 +280,10 @@ def listings() -> rx.Component:
                             disabled=ListingState.listings_page <= 1,
                         ),
                         rx.hstack(
-                            rx.text(
-                                "Страница ",
-                                size="2",
-                                color=rx.color("gray", 10),
-                            ),
-                            rx.badge(
-                                ListingState.listings_page,
-                                color_scheme="indigo",
-                                variant="soft",
-                            ),
-                            rx.text(
-                                " из ",
-                                ListingState.listings_total_pages,
-                                size="2",
-                                color=rx.color("gray", 10),
-                            ),
+                            t("page_label"),
+                            rx.badge(ListingState.listings_page, color_scheme="teal", variant="soft"),
+                            t("page_of"),
+                            rx.text(ListingState.listings_total_pages, size="2", color=rx.color("gray", 10)),
                             spacing="1",
                             align="center",
                         ),

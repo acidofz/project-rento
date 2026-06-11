@@ -2,6 +2,7 @@ import reflex as rx
 
 from uy_click.components.footer import site_footer
 from uy_click.components.navbar import navbar
+from uy_click.i18n import t
 from uy_click.state.listing_state import ListingState
 
 
@@ -10,10 +11,9 @@ def map_page() -> rx.Component:
         navbar(),
         rx.container(
             rx.vstack(
-                rx.heading("Карта объявлений", size="7"),
+                rx.heading(t("map_title"), size="7"),
                 rx.text(
-                    "Точки с координатами из объявлений. Укажите широту и долготу при создании или "
-                    "редактировании (например из карт: Ташкент ≈ 41.31, 69.28).",
+                    t("map_description"),
                     size="2",
                     color=rx.color("gray", 10),
                 ),

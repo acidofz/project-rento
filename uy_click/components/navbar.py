@@ -1,6 +1,8 @@
 import reflex as rx
 
+from uy_click.i18n import t
 from uy_click.state.auth_state import AuthState
+from uy_click.state.lang_state import LangState
 
 
 class NavbarState(rx.State):
@@ -14,19 +16,18 @@ class NavbarState(rx.State):
 
 
 _NAV_LINKS = [
-    ("Объявления", "/listings"),
-    ("Карта", "/map"),
-    ("Подать", "/create"),
-    ("Чаты", "/chats"),
-    ("Избранное", "/favorites"),
-    ("Мои объявления", "/my-listings"),
-    ("Профиль", "/profile"),
+    ("nav_listings", "/listings"),
+    ("nav_map", "/map"),
+    ("nav_chats", "/chats"),
+    ("nav_favorites", "/favorites"),
+    ("nav_my_listings", "/my-listings"),
+    ("nav_profile", "/profile"),
 ]
 
 
-def _desktop_link(label: str, href: str) -> rx.Component:
+def _desktop_link(key: str, href: str) -> rx.Component:
     return rx.link(
-        label,
+        t(key),
         href=href,
         color=rx.color("gray", 11),
         font_size="0.875rem",
@@ -36,9 +37,9 @@ def _desktop_link(label: str, href: str) -> rx.Component:
     )
 
 
-def _mobile_link(label: str, href: str) -> rx.Component:
+def _mobile_link(key: str, href: str) -> rx.Component:
     return rx.link(
-        label,
+        t(key),
         href=href,
         on_click=NavbarState.close_menu,
         width="100%",
@@ -51,16 +52,35 @@ def _mobile_link(label: str, href: str) -> rx.Component:
     )
 
 
+def _lang_switcher() -> rx.Component:
+    def _lang_btn(code: str, label: str) -> rx.Component:
+        return rx.button(
+            label,
+            size="1",
+            variant=rx.cond(LangState.lang == code, "solid", "ghost"),
+            color_scheme=rx.cond(LangState.lang == code, "teal", "gray"),
+            on_click=LangState.set_lang(code),
+            style={"font_weight": "600", "min_width": "32px"},
+        )
+
+    return rx.hstack(
+        _lang_btn("ru", "RU"),
+        _lang_btn("en", "EN"),
+        _lang_btn("uz", "UZ"),
+        spacing="1",
+    )
+
+
 def navbar() -> rx.Component:
     logo = rx.link(
         rx.hstack(
-            rx.heading("UY-CLICK", size="5", weight="bold", color=rx.color("gray", 12)),
-            rx.text(
-                "Прямая аренда",
-                size="1",
-                color=rx.color("gray", 9),
-                display=rx.breakpoints(initial="none", sm="block"),
+            rx.box(
+                rx.icon("house", size=18, color="white"),
+                background="linear-gradient(135deg, #0d9488, #0f766e)",
+                padding="0.35rem",
+                border_radius="8px",
             ),
+            rx.heading("UY-CLICK", size="4", weight="bold", color=rx.color("gray", 12)),
             spacing="2",
             align="center",
         ),
@@ -70,9 +90,23 @@ def navbar() -> rx.Component:
     )
 
     desktop_links = rx.hstack(
-        *[_desktop_link(label, href) for label, href in _NAV_LINKS[:5]],
+        *[_desktop_link(key, href) for key, href in _NAV_LINKS[:4]],
         spacing="5",
         display=rx.breakpoints(initial="none", lg="flex"),
+    )
+
+    post_btn = rx.link(
+        rx.button(
+            rx.icon("plus", size=14),
+            t("nav_post"),
+            size="2",
+            color_scheme="teal",
+            variant="solid",
+            style={"font_weight": "600"},
+        ),
+        href="/create",
+        underline="none",
+        display=rx.breakpoints(initial="none", sm="flex"),
     )
 
     user_section = rx.cond(
@@ -80,12 +114,12 @@ def navbar() -> rx.Component:
         rx.hstack(
             rx.cond(
                 AuthState.is_blocked,
-                rx.badge("Заблокирован", color_scheme="red", variant="soft", size="1"),
+                rx.badge(t("nav_blocked"), color_scheme="red", variant="soft", size="1"),
                 rx.text(
                     AuthState.user_name,
                     size="2",
                     color=rx.color("gray", 10),
-                    display=rx.breakpoints(initial="none", sm="block"),
+                    display=rx.breakpoints(initial="none", md="block"),
                     max_width="120px",
                     overflow="hidden",
                     text_overflow="ellipsis",
@@ -93,7 +127,7 @@ def navbar() -> rx.Component:
                 ),
             ),
             rx.button(
-                "Выйти",
+                t("nav_sign_out"),
                 on_click=AuthState.logout,
                 variant="soft",
                 size="1",
@@ -104,16 +138,12 @@ def navbar() -> rx.Component:
         ),
         rx.hstack(
             rx.link(
-                "Войти",
+                t("nav_sign_in"),
                 href="/login",
                 size="2",
                 color=rx.color("gray", 11),
                 font_weight="500",
-            ),
-            rx.link(
-                rx.button("Регистрация", size="1", variant="soft", color_scheme="indigo"),
-                href="/register",
-                underline="none",
+                display=rx.breakpoints(initial="none", sm="block"),
             ),
             spacing="3",
             align="center",
@@ -127,18 +157,35 @@ def navbar() -> rx.Component:
         size="2",
         on_click=NavbarState.toggle_menu,
         display=rx.breakpoints(initial="flex", lg="none"),
-        aria_label="Меню",
+        aria_label="Menu",
     )
 
     mobile_menu = rx.cond(
         NavbarState.menu_open,
         rx.vstack(
-            *[_mobile_link(label, href) for label, href in _NAV_LINKS],
+            rx.link(
+                rx.button(
+                    rx.icon("plus", size=14),
+                    t("nav_post"),
+                    size="2",
+                    color_scheme="teal",
+                    variant="solid",
+                    width="100%",
+                ),
+                href="/create",
+                on_click=NavbarState.close_menu,
+                underline="none",
+                width="100%",
+            ),
+            rx.divider(),
+            *[_mobile_link(key, href) for key, href in _NAV_LINKS],
+            rx.divider(),
+            _lang_switcher(),
             rx.divider(),
             rx.cond(
                 AuthState.is_logged_in,
                 rx.button(
-                    "Выйти",
+                    t("nav_sign_out"),
                     on_click=[AuthState.logout, NavbarState.close_menu],
                     variant="soft",
                     color_scheme="gray",
@@ -147,14 +194,14 @@ def navbar() -> rx.Component:
                 ),
                 rx.hstack(
                     rx.link(
-                        rx.button("Войти", variant="soft", color_scheme="gray", size="2", width="100%"),
+                        rx.button(t("nav_sign_in"), variant="soft", color_scheme="gray", size="2", width="100%"),
                         href="/login",
                         on_click=NavbarState.close_menu,
                         width="100%",
                         underline="none",
                     ),
                     rx.link(
-                        rx.button("Регистрация", variant="soft", color_scheme="indigo", size="2", width="100%"),
+                        rx.button(t("nav_register"), variant="solid", color_scheme="teal", size="2", width="100%"),
                         href="/register",
                         on_click=NavbarState.close_menu,
                         width="100%",
@@ -180,12 +227,15 @@ def navbar() -> rx.Component:
             rx.spacer(),
             desktop_links,
             rx.spacer(),
+            _lang_switcher(),
+            post_btn,
             user_section,
             hamburger,
             width="100%",
             padding_x="1.25rem",
             padding_y="0.75rem",
             align="center",
+            gap="3",
         ),
         mobile_menu,
         width="100%",
@@ -195,4 +245,5 @@ def navbar() -> rx.Component:
         bg=rx.color("gray", 1),
         z_index="100",
         border_bottom=f"1px solid {rx.color('gray', 4)}",
+        style={"backdrop_filter": "blur(8px)"},
     )

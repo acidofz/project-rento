@@ -790,3 +790,8 @@ class ListingState(AuthState):
     @rx.var(cache=True)
     def has_filtered_listings(self) -> bool:
         return bool(self._filtered_sorted_listings)
+
+    @rx.var(cache=True)
+    def homepage_listings(self) -> list[Listing]:
+        by_newest = sorted(self.listings, key=lambda x: -x.id)
+        return by_newest[:6]

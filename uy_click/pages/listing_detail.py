@@ -2,6 +2,7 @@ import reflex as rx
 
 from uy_click.components.footer import site_footer
 from uy_click.components.navbar import navbar
+from uy_click.i18n import t
 from uy_click.state.chat_state import ChatState
 from uy_click.state.listing_state import ListingState
 from uy_click.utils.helpers import format_price_uzs
@@ -13,10 +14,10 @@ def listing_detail() -> rx.Component:
         rx.container(
             rx.vstack(
                 rx.link(
-                    "← К объявлениям",
+                    t("detail_back"),
                     href="/listings",
                     size="2",
-                    color=rx.color("blue", 11),
+                    color=rx.color("teal", 10),
                 ),
                 rx.cond(
                     ListingState.error_message,
@@ -39,11 +40,7 @@ def listing_detail() -> rx.Component:
                                 ),
                                 rx.box(
                                     rx.center(
-                                        rx.text(
-                                            "Нет фото",
-                                            size="2",
-                                            color=rx.color("gray", 9),
-                                        ),
+                                        rx.text(t("detail_no_photo"), size="2", color=rx.color("gray", 9)),
                                         width="100%",
                                         height="200px",
                                     ),
@@ -57,7 +54,7 @@ def listing_detail() -> rx.Component:
                                 rx.heading(ListingState.detail_title, size="7"),
                                 rx.cond(
                                     ListingState.detail_is_premium,
-                                    rx.badge("PREMIUM", color_scheme="amber", variant="solid"),
+                                    rx.badge(t("common_premium_badge"), color_scheme="amber", variant="solid"),
                                     rx.fragment(),
                                 ),
                                 spacing="2",
@@ -68,7 +65,7 @@ def listing_detail() -> rx.Component:
                                 rx.text(ListingState.detail_district, weight="medium"),
                                 rx.text("·", color=rx.color("gray", 9)),
                                 rx.text(ListingState.detail_rooms, weight="medium"),
-                                rx.text("комн.", color=rx.color("gray", 11)),
+                                rx.text(t("detail_rooms_suffix"), color=rx.color("gray", 11)),
                                 spacing="2",
                                 align_items="center",
                             ),
@@ -81,13 +78,11 @@ def listing_detail() -> rx.Component:
                             rx.cond(
                                 ListingState.detail_has_location,
                                 rx.button(
-                                    "Показать на карте",
-                                    on_click=ListingState.go_to_map_focused(
-                                        ListingState.detail_id
-                                    ),
+                                    t("detail_show_map"),
+                                    on_click=ListingState.go_to_map_focused(ListingState.detail_id),
                                     variant="ghost",
                                     size="2",
-                                    color=rx.color("blue", 11),
+                                    color=rx.color("teal", 10),
                                     cursor="pointer",
                                 ),
                                 rx.fragment(),
@@ -95,23 +90,18 @@ def listing_detail() -> rx.Component:
                             rx.hstack(
                                 rx.button(
                                     rx.cond(
-                                        ListingState.favorite_listing_ids.contains(
-                                            ListingState.detail_id
-                                        ),
-                                        "Убрать из избранного",
-                                        "В избранное",
+                                        ListingState.favorite_listing_ids.contains(ListingState.detail_id),
+                                        t("detail_fav_remove"),
+                                        t("detail_fav_add"),
                                     ),
-                                    on_click=ListingState.toggle_favorite(
-                                        ListingState.detail_id
-                                    ),
+                                    on_click=ListingState.toggle_favorite(ListingState.detail_id),
                                     variant="soft",
                                 ),
                                 rx.button(
-                                    "Написать",
-                                    on_click=ChatState.create_chat_with_user(
-                                        ListingState.detail_owner_id
-                                    ),
+                                    t("detail_message"),
+                                    on_click=ChatState.create_chat_with_user(ListingState.detail_owner_id),
                                     variant="soft",
+                                    color_scheme="teal",
                                     disabled=ListingState.detail_owner_id == "",
                                 ),
                                 spacing="2",
@@ -123,17 +113,9 @@ def listing_detail() -> rx.Component:
                         max_width="640px",
                     ),
                     rx.vstack(
-                        rx.heading("Объявление не найдено", size="6"),
-                        rx.text(
-                            "Возможно, оно удалено или ссылка неверная.",
-                            color=rx.color("gray", 10),
-                            size="2",
-                        ),
-                        rx.link(
-                            "Все объявления",
-                            href="/listings",
-                            color=rx.color("blue", 11),
-                        ),
+                        rx.heading(t("detail_not_found_title"), size="6"),
+                        rx.text(t("detail_not_found_desc"), color=rx.color("gray", 10), size="2"),
+                        rx.link(t("detail_all_listings"), href="/listings", color=rx.color("teal", 10)),
                         spacing="2",
                         align_items="start",
                     ),

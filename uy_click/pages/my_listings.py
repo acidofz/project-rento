@@ -3,6 +3,7 @@ import reflex as rx
 from uy_click.components.listing_card import listing_card
 from uy_click.components.footer import site_footer
 from uy_click.components.navbar import navbar
+from uy_click.i18n import t
 from uy_click.state.listing_state import ListingState
 
 
@@ -10,9 +11,9 @@ def my_listing_card(listing) -> rx.Component:
     return rx.vstack(
         listing_card(listing),
         rx.hstack(
-            rx.button("Редактировать", on_click=ListingState.start_edit(listing.id), variant="soft"),
+            rx.button(t("my_listings_edit"), on_click=ListingState.start_edit(listing.id), variant="soft"),
             rx.button(
-                "Удалить",
+                t("my_listings_delete"),
                 on_click=ListingState.delete_listing(listing.id),
                 color_scheme="red",
                 variant="soft",
@@ -31,17 +32,12 @@ def my_listings() -> rx.Component:
         rx.container(
             rx.vstack(
                 rx.hstack(
-                    rx.heading("Мои объявления", size="7"),
+                    rx.heading(t("my_listings_title"), size="7"),
                     rx.spacer(),
-                    rx.button("Обновить", on_click=ListingState.load_my_listings, variant="soft"),
+                    rx.button(t("my_listings_refresh"), on_click=ListingState.load_my_listings, variant="soft"),
                     width="100%",
                 ),
-                rx.text(
-                    "Редактируйте или снимайте с публикации — изменения сразу видны в общем списке.",
-                    size="2",
-                    color=rx.color("gray", 10),
-                    width="100%",
-                ),
+                rx.text(t("my_listings_subtitle"), size="2", color=rx.color("gray", 10), width="100%"),
                 rx.cond(
                     ListingState.error_message,
                     rx.callout(ListingState.error_message, color_scheme="red"),
@@ -56,55 +52,47 @@ def my_listings() -> rx.Component:
                     ListingState.is_editing,
                     rx.card(
                         rx.vstack(
-                            rx.heading("Редактирование", size="5"),
+                            rx.heading(t("edit_page_title"), size="5"),
                             rx.input(
-                                placeholder="Заголовок",
+                                placeholder=t("create_ph_title"),
                                 value=ListingState.edit_title,
                                 on_change=ListingState.set_edit_title,
                             ),
                             rx.input(
-                                placeholder="Район",
+                                placeholder=t("create_ph_district"),
                                 value=ListingState.edit_district,
                                 on_change=ListingState.set_edit_district,
                             ),
                             rx.input(
-                                placeholder="Комнат",
+                                placeholder=t("create_ph_rooms"),
                                 type="number",
                                 min=1,
                                 value=ListingState.edit_rooms,
                                 on_change=ListingState.set_edit_rooms,
                             ),
                             rx.input(
-                                placeholder="Цена в сумах в месяц",
+                                placeholder=t("create_ph_price"),
                                 type="number",
                                 min=1,
                                 value=ListingState.edit_price,
                                 on_change=ListingState.set_edit_price,
                             ),
                             rx.hstack(
-                                rx.badge("Обычное", color_scheme="gray", variant="soft"),
-                                rx.badge("Премиум — скоро", color_scheme="amber", variant="outline"),
+                                rx.badge(t("common_normal"), color_scheme="gray", variant="soft"),
+                                rx.badge(t("create_premium_soon"), color_scheme="amber", variant="outline"),
                                 spacing="2",
                                 align_items="center",
                             ),
-                            rx.text(
-                                "Премиум-продвижение будет доступно с запуском монетизации.",
-                                size="1",
-                                color=rx.color("gray", 9),
-                            ),
-                            rx.text(
-                                "Точка на карте",
-                                size="2",
-                                color=rx.color("gray", 10),
-                            ),
+                            rx.text(t("create_premium_note"), size="1", color=rx.color("gray", 9)),
+                            rx.text(t("edit_location_label"), size="2", color=rx.color("gray", 10)),
                             rx.hstack(
                                 rx.input(
-                                    placeholder="Широта",
+                                    placeholder=t("create_ph_lat"),
                                     value=ListingState.edit_latitude,
                                     on_change=ListingState.set_edit_latitude,
                                 ),
                                 rx.input(
-                                    placeholder="Долгота",
+                                    placeholder=t("create_ph_lng"),
                                     value=ListingState.edit_longitude,
                                     on_change=ListingState.set_edit_longitude,
                                 ),
@@ -112,17 +100,9 @@ def my_listings() -> rx.Component:
                                 width="100%",
                                 align_items="stretch",
                             ),
-                            rx.text(
-                                "Обложка",
-                                size="2",
-                                color=rx.color("gray", 10),
-                            ),
+                            rx.text(t("edit_photo_label"), size="2", color=rx.color("gray", 10)),
                             rx.upload(
-                                rx.text(
-                                    "Заменить обложку — перетащите или выберите файл",
-                                    size="2",
-                                    color=rx.color("gray", 11),
-                                ),
+                                rx.text(t("edit_photo_replace"), size="2", color=rx.color("gray", 11)),
                                 id="listing-photo-edit",
                                 multiple=False,
                                 max_size=5_000_000,
@@ -143,10 +123,10 @@ def my_listings() -> rx.Component:
                                         width="100%",
                                         object_fit="cover",
                                         border_radius="md",
-                                        alt="Текущая обложка",
+                                        alt="cover",
                                     ),
                                     rx.button(
-                                        "Убрать фото",
+                                        t("create_photo_remove"),
                                         variant="soft",
                                         on_click=ListingState.clear_edit_photo,
                                     ),
@@ -157,8 +137,8 @@ def my_listings() -> rx.Component:
                                 rx.fragment(),
                             ),
                             rx.hstack(
-                                rx.button("Сохранить", on_click=ListingState.save_edit),
-                                rx.button("Отменить", on_click=ListingState.cancel_edit, variant="soft"),
+                                rx.button(t("edit_btn_save"), on_click=ListingState.save_edit, color_scheme="teal"),
+                                rx.button(t("edit_btn_cancel"), on_click=ListingState.cancel_edit, variant="soft"),
                                 spacing="2",
                             ),
                             spacing="3",
@@ -172,20 +152,13 @@ def my_listings() -> rx.Component:
                     ListingState.my_listings,
                     rx.grid(
                         rx.foreach(ListingState.my_listings, my_listing_card),
-                        columns="2",
+                        columns=rx.breakpoints(initial="1", sm="2", lg="3"),
                         spacing="4",
                         width="100%",
                     ),
                     rx.vstack(
-                        rx.text(
-                            "Пока нет объявлений.",
-                            color=rx.color("gray", 11),
-                        ),
-                        rx.link(
-                            "Подать объявление",
-                            href="/create",
-                            color=rx.color("blue", 11),
-                        ),
+                        rx.text(t("my_listings_empty"), color=rx.color("gray", 11)),
+                        rx.link(t("my_listings_create"), href="/create", color=rx.color("teal", 10)),
                         spacing="2",
                         align_items="start",
                     ),

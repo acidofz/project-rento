@@ -1,5 +1,6 @@
 import reflex as rx
 
+from uy_click.i18n import t
 from uy_click.state.listing_state import Listing
 from uy_click.utils.helpers import format_price_uzs
 
@@ -8,12 +9,11 @@ def listing_card_content(listing: Listing) -> rx.Component:
     return rx.vstack(
         # Image — bleeds to card edges, top corners clipped
         rx.box(
-            # Placeholder always in background — visible when image_url is
-            # empty OR when the URL is set but the image fails to load (404)
+            # Placeholder always in background
             rx.center(
                 rx.icon("image", size=32, color=rx.color("gray", 6)),
                 width="100%",
-                height="200px",
+                height="240px",
                 background=rx.color("gray", 2),
                 position="absolute",
                 top="0",
@@ -24,7 +24,7 @@ def listing_card_content(listing: Listing) -> rx.Component:
                 rx.image(
                     src=listing.image_url,
                     width="100%",
-                    height="200px",
+                    height="240px",
                     object_fit="cover",
                     alt=listing.title,
                     display="block",
@@ -38,7 +38,7 @@ def listing_card_content(listing: Listing) -> rx.Component:
                     rx.badge(
                         rx.hstack(
                             rx.icon("star", size=10),
-                            rx.text("PREMIUM", size="1"),
+                            rx.text(t("common_premium_badge"), size="1"),
                             spacing="1",
                             align="center",
                         ),
@@ -77,7 +77,7 @@ def listing_card_content(listing: Listing) -> rx.Component:
                 rx.text(listing.district, size="2", color=rx.color("gray", 9)),
                 rx.text("·", color=rx.color("gray", 5), size="2"),
                 rx.icon("door-open", size=11, color=rx.color("gray", 8)),
-                rx.text(listing.rooms, " комн.", size="2", color=rx.color("gray", 9)),
+                rx.text(listing.rooms, " ", t("rooms_suffix"), size="2", color=rx.color("gray", 9)),
                 spacing="1",
                 align="center",
                 flex_wrap="wrap",

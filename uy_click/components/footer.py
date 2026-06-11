@@ -1,5 +1,6 @@
 import reflex as rx
 
+from uy_click.i18n import t
 from uy_click.utils.helpers import current_year
 
 
@@ -10,24 +11,9 @@ def site_footer() -> rx.Component:
                 rx.separator(),
                 rx.hstack(
                     rx.hstack(
-                        rx.link(
-                            "Правила площадки",
-                            href="/terms",
-                            size="2",
-                            color=rx.color("gray", 11),
-                        ),
-                        rx.link(
-                            "Персональные данные",
-                            href="/privacy",
-                            size="2",
-                            color=rx.color("gray", 11),
-                        ),
-                        rx.link(
-                            "Бизнес-модель",
-                            href="/monetization",
-                            size="2",
-                            color=rx.color("gray", 11),
-                        ),
+                        rx.link(t("footer_terms"), href="/terms", size="2", color=rx.color("gray", 11)),
+                        rx.link(t("footer_privacy"), href="/privacy", size="2", color=rx.color("gray", 11)),
+                        rx.link(t("footer_biz"), href="/monetization", size="2", color=rx.color("gray", 11)),
                         spacing="4",
                     ),
                     rx.spacer(),
@@ -39,6 +25,8 @@ def site_footer() -> rx.Component:
                     width="100%",
                     align_items="center",
                     padding_y="1rem",
+                    flex_wrap="wrap",
+                    gap="3",
                 ),
                 spacing="0",
                 width="100%",

@@ -2,6 +2,7 @@ import reflex as rx
 
 from uy_click.components.footer import site_footer
 from uy_click.components.navbar import navbar
+from uy_click.i18n import t
 from uy_click.state.auth_state import AuthState
 
 
@@ -10,31 +11,27 @@ def register() -> rx.Component:
         navbar(),
         rx.container(
             rx.vstack(
-                rx.heading("Регистрация", size="7"),
-                rx.text(
-                    "Один пароль — и можно размещать объявления.",
-                    size="2",
-                    color=rx.color("gray", 10),
-                ),
+                rx.heading(t("register_title"), size="7"),
+                rx.text(t("register_subtitle"), size="2", color=rx.color("gray", 10)),
                 rx.input(
-                    placeholder="Электронная почта",
+                    placeholder=t("register_ph_email"),
                     value=AuthState.email,
                     on_change=AuthState.set_email,
                     width="100%",
                 ),
                 rx.input(
-                    placeholder="Пароль",
+                    placeholder=t("register_ph_password"),
                     type="password",
                     value=AuthState.password,
                     on_change=AuthState.set_password,
                     width="100%",
                 ),
-                rx.button("Создать аккаунт", on_click=AuthState.register, width="100%"),
+                rx.button(t("register_btn"), on_click=AuthState.register, width="100%", color_scheme="teal"),
                 rx.link(
-                    "Уже есть аккаунт? Войти",
+                    t("register_have_account"),
                     href="/login",
                     size="2",
-                    color=rx.color("blue", 11),
+                    color=rx.color("teal", 10),
                 ),
                 rx.cond(
                     AuthState.error_message,

@@ -8,7 +8,7 @@ def bento_tile(
     title: str,
     subtitle: str,
     icon_tag: str,
-    accent: str = "indigo",
+    accent: str = "teal",
     min_height: str | None = "148px",
     child: rx.Component | None = None,
 ) -> rx.Component:
@@ -54,7 +54,7 @@ def bento_hero(
 ) -> rx.Component:
     """Крупная герой-плитка на всю ширину сетки."""
     inner = rx.vstack(
-        rx.badge("UY-CLICK", color_scheme="indigo", variant="soft", size="2"),
+        rx.badge("UY-CLICK", color_scheme="teal", variant="soft", size="2"),
         rx.heading(title, size="8", weight="bold", style={"letter_spacing": "-0.02em"}),
         rx.text(
             subtitle,
@@ -74,10 +74,10 @@ def bento_hero(
             variant="surface",
             size="4",
             width="100%",
-            background=rx.color("indigo", 2),
+            background=rx.color("teal", 2),
             style={
-                "border": "1px solid rgba(79, 70, 229, 0.12)",
-                "box_shadow": "0 12px 40px -18px rgba(79, 70, 229, 0.25)",
+                "border": "1px solid rgba(13, 148, 136, 0.15)",
+                "box_shadow": "0 12px 40px -18px rgba(13, 148, 136, 0.25)",
             },
         ),
         width="100%",

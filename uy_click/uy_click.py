@@ -27,11 +27,11 @@ app = rx.App(
         appearance="light",
         has_background=True,
         radius="medium",
-        accent_color="indigo",
+        accent_color="teal",
     ),
     api_transformer=build_api_transformer(),
     head_components=[
-        rx.el.meta(name="theme-color", content="#4f46e5"),
+        rx.el.meta(name="theme-color", content="#0d9488"),
         rx.el.link(
             rel="stylesheet",
             href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css",
@@ -40,7 +40,12 @@ app = rx.App(
     ],
 )
 
-app.add_page(index, route="/", title="UY-CLICK")
+app.add_page(
+    index,
+    route="/",
+    title="UY-CLICK — Аренда жилья без посредников",
+    on_load=[AuthState.load_current_user_status, ListingState.load_listings],
+)
 app.add_page(
     login,
     route="/login",
