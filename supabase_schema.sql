@@ -94,6 +94,7 @@ create index if not exists profiles_email_idx on public.profiles(email);
 alter table public.profiles enable row level security;
 
 drop policy if exists "Public read profiles" on public.profiles;
+drop policy if exists "Authenticated read profiles" on public.profiles;
 create policy "Authenticated read profiles"
 on public.profiles
 for select
@@ -155,6 +156,8 @@ create index if not exists chat_members_chat_id_idx on public.chat_members(chat_
 create index if not exists chat_members_user_id_idx on public.chat_members(user_id);
 create index if not exists messages_chat_id_idx on public.messages(chat_id);
 create index if not exists messages_sender_id_idx on public.messages(sender_id);
+-- Composite index for rate-limit query: WHERE sender_id = X AND created_at >= Y
+create index if not exists messages_sender_created_idx on public.messages(sender_id, created_at);
 
 alter table public.chats enable row level security;
 alter table public.chat_members enable row level security;
@@ -221,11 +224,18 @@ to authenticated
 with check (created_by = auth.uid());
 
 drop policy if exists "Members view chat_members" on public.chat_members;
+-- Allow seeing ALL members of any chat you belong to (needed to find peer user_id)
 create policy "Members view chat_members"
 on public.chat_members
 for select
 to authenticated
-using (user_id = auth.uid());
+using (
+    exists (
+        select 1 from public.chat_members cm2
+        where cm2.chat_id = chat_members.chat_id
+          and cm2.user_id = auth.uid()
+    )
+);
 
 drop policy if exists "Users insert own chat_members" on public.chat_members;
 create policy "Users insert own chat_members"
@@ -267,6 +277,9 @@ with check (
 
 -- Listing cover image (public URL in this column)
 alter table public.listings add column if not exists image_url text;
+
+-- Contact phone number (optional, shown instead of chat)
+alter table public.listings add column if not exists phone text;
 
 -- Map markers (WGS84). Optional: both null or both set from the app.
 alter table public.listings add column if not exists latitude double precision;

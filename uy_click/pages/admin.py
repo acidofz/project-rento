@@ -22,22 +22,6 @@ def listing_row(item) -> rx.Component:
     )
 
 
-def message_row(item) -> rx.Component:
-    return rx.hstack(
-        rx.text(f"#{item['id']}"),
-        rx.text(f"Чат №{item['chat_id']}", color=rx.color("gray", 10), size="1"),
-        rx.text(item["body"], max_width="420px"),
-        rx.spacer(),
-        rx.button(
-            "Удалить",
-            on_click=AdminState.delete_message_as_admin(item["id"]),
-            color_scheme="red",
-            variant="soft",
-        ),
-        width="100%",
-    )
-
-
 def user_row(item) -> rx.Component:
     return rx.hstack(
         rx.text(
@@ -118,20 +102,6 @@ def admin() -> rx.Component:
                                     align_items="start",
                                 )
                             ),
-                            rx.card(
-                                rx.vstack(
-                                    rx.text("Чаты", color=rx.color("gray", 10)),
-                                    rx.heading(AdminState.chats_count, size="7"),
-                                    align_items="start",
-                                )
-                            ),
-                            rx.card(
-                                rx.vstack(
-                                    rx.text("Сообщения", color=rx.color("gray", 10)),
-                                    rx.heading(AdminState.messages_count, size="7"),
-                                    align_items="start",
-                                )
-                            ),
                             columns=rx.breakpoints(initial="1", sm="2"),
                             spacing="4",
                             width="100%",
@@ -150,16 +120,6 @@ def admin() -> rx.Component:
                             rx.vstack(
                                 rx.heading("Пользователи", size="5"),
                                 rx.foreach(AdminState.latest_users, user_row),
-                                spacing="2",
-                                width="100%",
-                                align_items="stretch",
-                            ),
-                            width="100%",
-                        ),
-                        rx.card(
-                            rx.vstack(
-                                rx.heading("Последние сообщения", size="5"),
-                                rx.foreach(AdminState.latest_messages, message_row),
                                 spacing="2",
                                 width="100%",
                                 align_items="stretch",

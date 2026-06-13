@@ -2,7 +2,6 @@ import reflex as rx
 
 from uy_click.pages.admin import admin
 from uy_click.pages.create import create
-from uy_click.pages.chats import chats
 from uy_click.pages.favorites import favorites
 from uy_click.pages.health import health
 from uy_click.pages.index import index
@@ -17,7 +16,6 @@ from uy_click.pages.register import register
 from uy_click.pages.monetization import monetization
 from uy_click.pages.terms import terms
 from uy_click.state.listing_state import ListingState
-from uy_click.state.chat_state import ChatState
 from uy_click.state.admin_state import AdminState
 from uy_click.state.auth_state import AuthState
 from uy_click.ready_layer import build_api_transformer
@@ -72,6 +70,7 @@ app.add_page(
         AuthState.load_current_user_status,
         ListingState.load_listings,
         ListingState.render_map_leaflet,
+        ListingState.clear_map_focus,
     ],
 )
 app.add_page(
@@ -87,23 +86,13 @@ app.add_page(
     create,
     route="/create",
     title="Создать объявление",
-    on_load=AuthState.require_login,
-)
-app.add_page(
-    chats,
-    route="/chats",
-    title="Чаты",
-    on_load=[
-        AuthState.require_login,
-        ChatState.load_chats,
-        ChatState.start_chat_message_poll,
-    ],
+    on_load=[AuthState.require_login, ListingState.reset_create_form],
 )
 app.add_page(
     favorites,
     route="/favorites",
     title="Избранное",
-    on_load=[AuthState.require_login, ListingState.load_listings],
+    on_load=[AuthState.require_login, ListingState.load_favorite_listings],
 )
 app.add_page(
     my_listings,

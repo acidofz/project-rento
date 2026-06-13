@@ -37,6 +37,13 @@ def create() -> rx.Component:
                     value=ListingState.price,
                     on_change=ListingState.set_price,
                 ),
+                rx.text(t("create_phone_label"), size="2", color=rx.color("gray", 10)),
+                rx.input(
+                    placeholder=t("create_ph_phone"),
+                    type="tel",
+                    value=ListingState.create_phone,
+                    on_change=ListingState.set_create_phone,
+                ),
                 rx.hstack(
                     rx.badge(t("common_normal"), color_scheme="gray", variant="soft"),
                     rx.badge(t("create_premium_soon"), color_scheme="amber", variant="outline"),

@@ -33,6 +33,28 @@ class AuthState(rx.State):
     error_message: str = ""
     # Persisted in localStorage — survives page refresh, isolated per browser tab
     access_token: str = rx.LocalStorage("", name="uy_click_access_token")
+    refresh_token: str = rx.LocalStorage("", name="uy_click_refresh_token")
+
+    def _try_refresh_token(self) -> bool:
+        if not self.refresh_token:
+            return False
+        from supabase import create_client
+        from uy_click.supabase_client import SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_KEY
+        key = SUPABASE_ANON_KEY or SUPABASE_KEY
+        if not SUPABASE_URL or not key:
+            return False
+        try:
+            fresh_sb = create_client(SUPABASE_URL, key)
+            resp = fresh_sb.auth.refresh_session(self.refresh_token)
+            session = getattr(resp, "session", None)
+            if session and getattr(session, "access_token", None):
+                self.access_token = session.access_token
+                self.refresh_token = getattr(session, "refresh_token", "") or ""
+                return True
+        except Exception:
+            pass
+        self.refresh_token = ""
+        return False
 
     @staticmethod
     def _upsert_profile(user_id: str, email: str, access_token: str) -> None:
@@ -63,8 +85,13 @@ class AuthState(rx.State):
             user_resp = sb.auth.get_user(jwt=self.access_token)
             user = getattr(user_resp, "user", None)
             if user is None or not getattr(user, "id", None):
-                # Token expired or invalid — clear it
+                # Token expired — try refresh before giving up
+                if self._try_refresh_token():
+                    user_resp = sb.auth.get_user(jwt=self.access_token)
+                    user = getattr(user_resp, "user", None)
+            if user is None or not getattr(user, "id", None):
                 self.access_token = ""
+                self.refresh_token = ""
                 self.is_logged_in = False
                 self.user_id = ""
                 self.user_name = "Гость"
@@ -126,12 +153,14 @@ class AuthState(rx.State):
             self.user_id = user.id or ""
             if session is not None:
                 self.access_token = getattr(session, "access_token", "") or ""
+                self.refresh_token = getattr(session, "refresh_token", "") or ""
                 self.is_logged_in = bool(self.access_token)
             else:
                 self.is_logged_in = False
             self._upsert_profile(self.user_id, user.email or "", self.access_token)
             if self.is_logged_in:
                 self.load_current_user_status()
+            self.password = ""
             self.error_message = (
                 ""
                 if self.is_logged_in
@@ -165,32 +194,33 @@ class AuthState(rx.State):
                 self.error_message = "Неверный email или пароль."
                 return
             self.access_token = getattr(session, "access_token", "") or ""
+            self.refresh_token = getattr(session, "refresh_token", "") or ""
             self.user_name = user.email.split("@")[0] if user.email else "Пользователь"
             self.user_id = user.id or ""
             self.is_logged_in = bool(self.access_token)
             self._upsert_profile(self.user_id, user.email or "", self.access_token)
             self.load_current_user_status()
+            self.password = ""
             self.error_message = ""
         except Exception as exc:
             self.error_message = _humanize_auth_error(exc, "входа")
 
     def logout(self) -> None:
-        # Sign out using an authed client so the token is revoked server-side
         if self.access_token:
             try:
-                from supabase import create_client
-                from uy_click.supabase_client import SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_KEY
-                key = SUPABASE_ANON_KEY or SUPABASE_KEY
-                if SUPABASE_URL and key:
-                    fresh_sb = create_client(SUPABASE_URL, key)
-                    fresh_sb.auth.admin.sign_out(self.access_token)
+                from uy_click.supabase_client import get_supabase_authed
+                sb = get_supabase_authed(self.access_token)
+                if sb is not None:
+                    sb.auth.sign_out()
             except Exception:
                 pass
         self.access_token = ""
+        self.refresh_token = ""
         self.is_logged_in = False
         self.user_id = ""
         self.user_name = "Гость"
         self.is_blocked = False
+        self.email = ""
         self.password = ""
 
     def require_login(self):

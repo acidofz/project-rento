@@ -14,13 +14,10 @@ def _admin_ids_from_env() -> set[str]:
 class AdminState(AuthState):
     is_admin: bool = False
     listings_count: int = 0
-    chats_count: int = 0
-    messages_count: int = 0
     users_count: int = 0
     error_message: str = ""
     success_message: str = ""
     latest_listings: list[dict] = []
-    latest_messages: list[dict] = []
     latest_users: list[dict] = []
 
     def _check_admin(self):
@@ -46,27 +43,12 @@ class AdminState(AuthState):
             self.listings_count = (
                 sb_admin.table("listings").select("id", count="exact").limit(0).execute().count or 0
             )
-            self.chats_count = (
-                sb_admin.table("chats").select("id", count="exact").limit(0).execute().count or 0
-            )
-            self.messages_count = (
-                sb_admin.table("messages").select("id", count="exact").limit(0).execute().count or 0
-            )
             self.users_count = (
                 sb_admin.table("profiles").select("id", count="exact").limit(0).execute().count or 0
             )
             self.latest_listings = (
                 sb_admin.table("listings")
                 .select("id,title,district,price")
-                .order("id", desc=True)
-                .limit(8)
-                .execute()
-                .data
-                or []
-            )
-            self.latest_messages = (
-                sb_admin.table("messages")
-                .select("id,chat_id,body,sender_id")
                 .order("id", desc=True)
                 .limit(8)
                 .execute()
@@ -101,21 +83,6 @@ class AdminState(AuthState):
             self.load_admin_dashboard()
         except Exception:
             self.error_message = "Не удалось удалить объявление. Попробуйте еще раз."
-
-    def delete_message_as_admin(self, message_id: int) -> None:
-        if self._check_admin() is None:
-            return
-        sb_admin = get_supabase_admin()
-        if sb_admin is None:
-            self.error_message = "Сервисный ключ Supabase не задан — админ-режим недоступен."
-            return
-        try:
-            sb_admin.table("messages").delete().eq("id", message_id).execute()
-            self.success_message = f"Сообщение #{message_id} удалено."
-            self.error_message = ""
-            self.load_admin_dashboard()
-        except Exception:
-            self.error_message = "Не удалось удалить сообщение. Попробуйте еще раз."
 
     def set_user_block_status(self, user_id: str, blocked: bool) -> None:
         if self._check_admin() is None:

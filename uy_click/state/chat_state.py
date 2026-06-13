@@ -1,7 +1,7 @@
 import asyncio
+from datetime import datetime, timedelta, timezone
 from pydantic import BaseModel
 import reflex as rx
-import time
 
 from uy_click.supabase_client import get_supabase, get_supabase_authed
 from uy_click.state.auth_state import AuthState
@@ -82,16 +82,14 @@ class ChatState(AuthState):
         return value.replace("T", " ")[:16]
 
     @staticmethod
-    def _with_retry(func, attempts: int = 3, delay_sec: float = 0.4):
+    def _with_retry(func, attempts: int = 3):
         last_exc: Exception | None = None
         for attempt in range(attempts):
             try:
                 return func()
             except Exception as exc:
                 last_exc = exc
-                if attempt < attempts - 1:
-                    time.sleep(delay_sec)
-                else:
+                if attempt >= attempts - 1:
                     raise
         if last_exc is not None:
             raise last_exc
@@ -383,42 +381,18 @@ class ChatState(AuthState):
         if not self.is_logged_in or not self.user_id:
             self.quick_contacts = []
             return
-        sb = get_supabase_authed(self.access_token)
-        if sb is None:
-            return
-        try:
-            current_uid = self.user_id
-            listing_rows = (
-                self._with_retry(
-                    lambda: (
-                        sb.table("listings")
-                        .select("owner_id")
-                        .limit(200)
-                        .execute()
-                        .data
-                        or []
-                    )
-                )
-                or []
-            )
-            owner_ids = {
-                str(row.get("owner_id", "") or "")
-                for row in listing_rows
-                if row.get("owner_id") and str(row.get("owner_id")) != current_uid
-            }
-            # Add peers from existing chats too.
-            peer_ids = {chat.peer_user_id for chat in self.chats if chat.peer_user_id}
-            user_ids = owner_ids.union(peer_ids)
-            self._load_user_labels(user_ids)
-            self.quick_contacts = [
-                QuickContact(
-                    user_id=uid,
-                    label=self.user_labels.get(uid, f"Пользователь {uid[:8]}"),
-                )
-                for uid in sorted(user_ids)
-            ]
-        except Exception:
+        peer_ids = {chat.peer_user_id for chat in self.chats if chat.peer_user_id}
+        if not peer_ids:
             self.quick_contacts = []
+            return
+        self._load_user_labels(peer_ids)
+        self.quick_contacts = [
+            QuickContact(
+                user_id=uid,
+                label=self.user_labels.get(uid, f"Пользователь {uid[:8]}"),
+            )
+            for uid in sorted(peer_ids)
+        ]
 
     def create_chat_with_user(self, peer_user_id: str):
         self.peer_user_id = (peer_user_id or "").strip()
@@ -452,6 +426,20 @@ class ChatState(AuthState):
             return
         try:
             current_uid = self.user_id
+            since = (datetime.now(timezone.utc) - timedelta(minutes=5)).isoformat()
+            recent_count = (
+                sb.table("messages")
+                .select("id", count="exact")
+                .eq("sender_id", current_uid)
+                .gte("created_at", since)
+                .limit(0)
+                .execute()
+                .count
+                or 0
+            )
+            if recent_count >= 30:
+                self.error_message = "Слишком много сообщений. Подождите несколько минут."
+                return
             self._with_retry(
                 lambda: sb.table("messages")
                 .insert(

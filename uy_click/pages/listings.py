@@ -4,7 +4,6 @@ from uy_click.components.listing_card import listing_card_content, _CARD_STYLE, 
 from uy_click.components.footer import site_footer
 from uy_click.components.navbar import navbar
 from uy_click.i18n import t
-from uy_click.state.chat_state import ChatState
 from uy_click.state.listing_state import ListingState
 
 
@@ -46,17 +45,34 @@ def listing_card_with_actions(listing) -> rx.Component:
                     size="1",
                     color_scheme=rx.cond(is_fav, "crimson", "gray"),
                 ),
-                rx.button(
-                    rx.hstack(
-                        rx.icon("message-circle", size=12),
-                        t("btn_message"),
-                        spacing="1",
-                        align="center",
+                rx.cond(
+                    listing.phone != "",
+                    rx.link(
+                        rx.hstack(
+                            rx.icon("phone", size=12),
+                            t("btn_message"),
+                            spacing="1",
+                            align="center",
+                        ),
+                        href="tel:" + listing.phone,
+                        underline="none",
+                        color=rx.color("teal", 10),
+                        font_size="var(--font-size-1)",
+                        font_weight="500",
                     ),
-                    on_click=ChatState.create_chat_with_user(listing.owner_id),
-                    variant="ghost",
-                    size="1",
-                    color_scheme="teal",
+                    rx.link(
+                        rx.hstack(
+                            rx.icon("phone", size=12),
+                            t("btn_message"),
+                            spacing="1",
+                            align="center",
+                        ),
+                        href="/listing/" + listing.id.to_string(),
+                        underline="none",
+                        color=rx.color("gray", 9),
+                        font_size="var(--font-size-1)",
+                        font_weight="500",
+                    ),
                 ),
                 spacing="1",
                 width="100%",

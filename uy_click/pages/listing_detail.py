@@ -3,7 +3,6 @@ import reflex as rx
 from uy_click.components.footer import site_footer
 from uy_click.components.navbar import navbar
 from uy_click.i18n import t
-from uy_click.state.chat_state import ChatState
 from uy_click.state.listing_state import ListingState
 from uy_click.utils.helpers import format_price_uzs
 
@@ -87,24 +86,44 @@ def listing_detail() -> rx.Component:
                                 ),
                                 rx.fragment(),
                             ),
-                            rx.hstack(
-                                rx.button(
-                                    rx.cond(
-                                        ListingState.favorite_listing_ids.contains(ListingState.detail_id),
-                                        t("detail_fav_remove"),
-                                        t("detail_fav_add"),
+                            rx.cond(
+                                ListingState.detail_phone != "",
+                                rx.hstack(
+                                    rx.icon("phone", size=16, color=rx.color("teal", 10)),
+                                    rx.text(
+                                        ListingState.detail_phone,
+                                        size="3",
+                                        weight="medium",
+                                        color=rx.color("gray", 12),
                                     ),
-                                    on_click=ListingState.toggle_favorite(ListingState.detail_id),
-                                    variant="soft",
+                                    rx.link(
+                                        rx.button(
+                                            t("detail_phone_call"),
+                                            color_scheme="teal",
+                                            variant="solid",
+                                            size="2",
+                                        ),
+                                        href="tel:" + ListingState.detail_phone,
+                                        underline="none",
+                                    ),
+                                    spacing="3",
+                                    align="center",
+                                    flex_wrap="wrap",
                                 ),
-                                rx.button(
-                                    t("detail_message"),
-                                    on_click=ChatState.create_chat_with_user(ListingState.detail_owner_id),
-                                    variant="soft",
-                                    color_scheme="teal",
-                                    disabled=ListingState.detail_owner_id == "",
+                                rx.text(
+                                    t("detail_phone_none"),
+                                    size="2",
+                                    color=rx.color("gray", 9),
                                 ),
-                                spacing="2",
+                            ),
+                            rx.button(
+                                rx.cond(
+                                    ListingState.favorite_listing_ids.contains(ListingState.detail_id),
+                                    t("detail_fav_remove"),
+                                    t("detail_fav_add"),
+                                ),
+                                on_click=ListingState.toggle_favorite(ListingState.detail_id),
+                                variant="soft",
                             ),
                             spacing="4",
                             align_items="stretch",

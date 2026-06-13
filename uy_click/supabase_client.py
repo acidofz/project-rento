@@ -36,7 +36,7 @@ def get_supabase() -> Any:
     singleton shared across all user sessions. Auth must go through
     get_supabase_authed() instead.
     """
-    key = SUPABASE_ANON_KEY or SUPABASE_KEY or SUPABASE_SERVICE_ROLE_KEY
+    key = SUPABASE_ANON_KEY or SUPABASE_KEY
     if not SUPABASE_URL or not key:
         return None
 
@@ -59,7 +59,7 @@ def get_supabase_authed(access_token: str) -> Any:
     Authorization header so that Supabase RLS sees the correct identity.
     Never cached — each call gets an isolated client.
     """
-    key = SUPABASE_ANON_KEY or SUPABASE_KEY or SUPABASE_SERVICE_ROLE_KEY
+    key = SUPABASE_ANON_KEY or SUPABASE_KEY
     if not SUPABASE_URL or not key or not access_token:
         return None
 

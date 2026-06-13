@@ -18,7 +18,6 @@ class NavbarState(rx.State):
 _NAV_LINKS = [
     ("nav_listings", "/listings"),
     ("nav_map", "/map"),
-    ("nav_chats", "/chats"),
     ("nav_favorites", "/favorites"),
     ("nav_my_listings", "/my-listings"),
     ("nav_profile", "/profile"),
@@ -90,7 +89,7 @@ def navbar() -> rx.Component:
     )
 
     desktop_links = rx.hstack(
-        *[_desktop_link(key, href) for key, href in _NAV_LINKS[:4]],
+        *[_desktop_link(key, href) for key, href in _NAV_LINKS[:3]],
         spacing="5",
         display=rx.breakpoints(initial="none", lg="flex"),
     )

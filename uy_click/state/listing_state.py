@@ -82,8 +82,8 @@ def _optional_lat_lng_from_form(lat_s: str, lng_s: str) -> tuple[float | None, f
         lng = float(b)
     except ValueError:
         return "Широта и долгота должны быть числами (например 41.31 и 69.28)."
-    if not (40.8 <= lat <= 42.2 and 68.0 <= lng <= 70.5):
-        return "Координаты вне допустимого региона (ожидается территория вокруг Ташкента)."
+    if not (37.0 <= lat <= 45.6 and 56.0 <= lng <= 73.2):
+        return "Координаты вне допустимого региона (ожидается территория Узбекистана)."
     return (lat, lng)
 
 
@@ -117,6 +117,7 @@ class Listing(BaseModel):
     latitude: float | None = None
     longitude: float | None = None
     is_premium: bool = False
+    phone: str = ""
 
 
 from uy_click.state.auth_state import AuthState  # noqa: E402 — must be after Listing model
@@ -125,28 +126,8 @@ from uy_click.state.auth_state import AuthState  # noqa: E402 — must be after 
 class ListingState(AuthState):
     """Listings state backed by Supabase table `listings`."""
 
-    listings: list[Listing] = [
-        Listing(
-            id=1,
-            title="Уютная 1-комнатная квартира",
-            district="Юнусабад",
-            rooms=1,
-            price=3500000,
-            image_url="",
-            latitude=41.33,
-            longitude=69.29,
-        ),
-        Listing(
-            id=2,
-            title="2-комнатная рядом с метро",
-            district="Чиланзар",
-            rooms=2,
-            price=4800000,
-            image_url="",
-            latitude=41.28,
-            longitude=69.22,
-        ),
-    ]
+    listings: list[Listing] = []
+    favorite_listings_data: list[Listing] = []
     title: str = ""
     district: str = ""
     rooms: int = 1
@@ -176,6 +157,8 @@ class ListingState(AuthState):
     create_longitude: str = ""
     edit_latitude: str = ""
     edit_longitude: str = ""
+    create_phone: str = ""
+    edit_phone: str = ""
     listings_loading: bool = False
     detail_id: int = 0
     detail_title: str = ""
@@ -186,7 +169,21 @@ class ListingState(AuthState):
     detail_image_url: str = ""
     detail_has_location: bool = False
     detail_is_premium: bool = False
+    detail_phone: str = ""
     map_focus_id: int = 0
+
+    def reset_create_form(self) -> None:
+        self.title = ""
+        self.district = ""
+        self.rooms = 1
+        self.price = 0
+        self.create_latitude = ""
+        self.create_longitude = ""
+        self.create_phone = ""
+        self.pending_image_url = ""
+        self.pending_image_name = ""
+        self.error_message = ""
+        self.success_message = ""
 
     def _clear_listing_detail(self) -> None:
         self.detail_id = 0
@@ -198,6 +195,7 @@ class ListingState(AuthState):
         self.detail_image_url = ""
         self.detail_has_location = False
         self.detail_is_premium = False
+        self.detail_phone = ""
 
     def load_listing_detail(self) -> None:
         """Load one listing for `/listing/[listing_id]` from router params."""
@@ -216,7 +214,7 @@ class ListingState(AuthState):
             response = (
                 sb.table("listings")
                 .select(
-                    "id,title,district,rooms,price,owner_id,image_url,latitude,longitude,is_premium"
+                    "id,title,district,rooms,price,owner_id,image_url,latitude,longitude,is_premium,phone"
                 )
                 .eq("id", listing_id)
                 .limit(1)
@@ -238,6 +236,7 @@ class ListingState(AuthState):
                 "longitude"
             ) is not None
             self.detail_is_premium = bool(row.get("is_premium", False))
+            self.detail_phone = str(row.get("phone") or "")
         except Exception:
             self._clear_listing_detail()
             self.error_message = "Не удалось загрузить объявление."
@@ -269,10 +268,16 @@ class ListingState(AuthState):
         self.district = value[:100]
 
     def set_rooms(self, value: str) -> None:
-        self.rooms = max(1, int(value) if value else 1)
+        try:
+            self.rooms = max(1, int(value) if value else 1)
+        except (ValueError, TypeError):
+            self.rooms = 1
 
     def set_price(self, value: str) -> None:
-        self.price = int(value) if value else 0
+        try:
+            self.price = int(value) if value else 0
+        except (ValueError, TypeError):
+            self.price = 0
 
     def set_create_latitude(self, value: str) -> None:
         self.create_latitude = value
@@ -280,11 +285,17 @@ class ListingState(AuthState):
     def set_create_longitude(self, value: str) -> None:
         self.create_longitude = value
 
+    def set_create_phone(self, value: str) -> None:
+        self.create_phone = value[:30]
+
     def set_edit_latitude(self, value: str) -> None:
         self.edit_latitude = value
 
     def set_edit_longitude(self, value: str) -> None:
         self.edit_longitude = value
+
+    def set_edit_phone(self, value: str) -> None:
+        self.edit_phone = value[:30]
 
     def set_search_query(self, value: str) -> None:
         self.search_query = value
@@ -295,19 +306,31 @@ class ListingState(AuthState):
         self.listings_page = 1
 
     def set_min_price(self, value: str) -> None:
-        self.min_price = int(value) if value else 0
+        try:
+            self.min_price = int(value) if value else 0
+        except (ValueError, TypeError):
+            self.min_price = 0
         self.listings_page = 1
 
     def set_max_price(self, value: str) -> None:
-        self.max_price = int(value) if value else 0
+        try:
+            self.max_price = int(value) if value else 0
+        except (ValueError, TypeError):
+            self.max_price = 0
         self.listings_page = 1
 
     def set_min_rooms(self, value: str) -> None:
-        self.min_rooms = int(value) if value else 0
+        try:
+            self.min_rooms = int(value) if value else 0
+        except (ValueError, TypeError):
+            self.min_rooms = 0
         self.listings_page = 1
 
     def set_max_rooms(self, value: str) -> None:
-        self.max_rooms = int(value) if value else 0
+        try:
+            self.max_rooms = int(value) if value else 0
+        except (ValueError, TypeError):
+            self.max_rooms = 0
         self.listings_page = 1
 
     def reset_filters(self) -> None:
@@ -339,10 +362,16 @@ class ListingState(AuthState):
         self.edit_district = value[:100]
 
     def set_edit_rooms(self, value: str) -> None:
-        self.edit_rooms = max(1, int(value) if value else 1)
+        try:
+            self.edit_rooms = max(1, int(value) if value else 1)
+        except (ValueError, TypeError):
+            self.edit_rooms = 1
 
     def set_edit_price(self, value: str) -> None:
-        self.edit_price = int(value) if value else 0
+        try:
+            self.edit_price = int(value) if value else 0
+        except (ValueError, TypeError):
+            self.edit_price = 0
 
     def start_edit(self, listing_id: int) -> None:
         target = next((item for item in self.my_listings if item.id == listing_id), None)
@@ -362,6 +391,7 @@ class ListingState(AuthState):
         self.edit_longitude = (
             str(target.longitude) if target.longitude is not None else ""
         )
+        self.edit_phone = target.phone or ""
         self.error_message = ""
 
     def cancel_edit(self) -> None:
@@ -374,6 +404,7 @@ class ListingState(AuthState):
         self.edit_image_url_before_upload = ""
         self.edit_latitude = ""
         self.edit_longitude = ""
+        self.edit_phone = ""
 
     def render_map_leaflet(self) -> Any:
         markers: list[dict[str, Any]] = []
@@ -391,11 +422,12 @@ class ListingState(AuthState):
                     "image_url": item.image_url or "",
                 }
             )
-        focus_id = self.map_focus_id
-        self.map_focus_id = 0
         return rx.call_script(
-            f"window.__uyClickInitMap({json.dumps(markers, ensure_ascii=True)}, {focus_id});"
+            f"window.__uyClickInitMap({json.dumps(markers, ensure_ascii=True)}, {self.map_focus_id});"
         )
+
+    def clear_map_focus(self) -> None:
+        self.map_focus_id = 0
 
     def go_to_map_focused(self, listing_id: int):
         self.map_focus_id = listing_id
@@ -484,6 +516,7 @@ class ListingState(AuthState):
                 "rooms": self.edit_rooms,
                 "price": self.edit_price,
                 "image_url": self.edit_image_url or None,
+                "phone": self.edit_phone.strip() or None,
             }
             if lat is not None:
                 update_row["latitude"] = lat
@@ -568,6 +601,8 @@ class ListingState(AuthState):
                 "price": self.price,
                 "owner_id": self.user_id,
             }
+            if self.create_phone.strip():
+                row["phone"] = self.create_phone.strip()
             if self.pending_image_url:
                 row["image_url"] = self.pending_image_url
             if lat is not None:
@@ -580,6 +615,7 @@ class ListingState(AuthState):
             self.price = 0
             self.create_latitude = ""
             self.create_longitude = ""
+            self.create_phone = ""
             self.pending_image_url = ""
             self.pending_image_name = ""
             self.error_message = ""
@@ -602,7 +638,7 @@ class ListingState(AuthState):
             response = (
                 sb.table("listings")
                 .select(
-                    "id,title,district,rooms,price,owner_id,image_url,latitude,longitude,is_premium"
+                    "id,title,district,rooms,price,owner_id,image_url,latitude,longitude,is_premium,phone"
                 )
                 .order("id", desc=True)
                 .execute()
@@ -620,6 +656,7 @@ class ListingState(AuthState):
                     latitude=_row_float_or_none(row.get("latitude")),
                     longitude=_row_float_or_none(row.get("longitude")),
                     is_premium=bool(row.get("is_premium", False)),
+                    phone=str(row.get("phone") or ""),
                 )
                 for row in rows
                 if row.get("id") is not None
@@ -650,7 +687,7 @@ class ListingState(AuthState):
             response = (
                 sb.table("listings")
                 .select(
-                    "id,title,district,rooms,price,owner_id,image_url,latitude,longitude,is_premium"
+                    "id,title,district,rooms,price,owner_id,image_url,latitude,longitude,is_premium,phone"
                 )
                 .eq("owner_id", self.user_id)
                 .order("id", desc=True)
@@ -669,6 +706,7 @@ class ListingState(AuthState):
                     latitude=_row_float_or_none(row.get("latitude")),
                     longitude=_row_float_or_none(row.get("longitude")),
                     is_premium=bool(row.get("is_premium", False)),
+                    phone=str(row.get("phone") or ""),
                 )
                 for row in rows
                 if row.get("id") is not None
@@ -700,6 +738,62 @@ class ListingState(AuthState):
         except Exception:
             self.favorite_listing_ids = []
 
+    def load_favorite_listings(self) -> None:
+        """Load only the listings the user has favourited — avoids fetching the full table."""
+        if not self.is_logged_in or not self.user_id:
+            self.favorite_listings_data = []
+            self.favorite_listing_ids = []
+            return
+        sb = get_supabase_authed(self.access_token)
+        if sb is None:
+            self.error_message = "Supabase не настроен. Проверьте .env."
+            return
+        try:
+            fav_rows = (
+                sb.table("favorites")
+                .select("listing_id")
+                .eq("user_id", self.user_id)
+                .execute()
+                .data
+                or []
+            )
+            ids = [int(r["listing_id"]) for r in fav_rows if r.get("listing_id") is not None]
+            self.favorite_listing_ids = ids
+            if not ids:
+                self.favorite_listings_data = []
+                return
+            rows = (
+                sb.table("listings")
+                .select(
+                    "id,title,district,rooms,price,owner_id,image_url,latitude,longitude,is_premium,phone"
+                )
+                .in_("id", ids)
+                .order("id", desc=True)
+                .execute()
+                .data
+                or []
+            )
+            self.favorite_listings_data = [
+                Listing(
+                    id=int(row.get("id", 0)),
+                    title=str(row.get("title", "")),
+                    district=str(row.get("district", "")),
+                    rooms=int(row.get("rooms", 1) or 1),
+                    price=int(row.get("price", 0) or 0),
+                    owner_id=str(row.get("owner_id", "") or ""),
+                    image_url=str(row.get("image_url") or ""),
+                    latitude=_row_float_or_none(row.get("latitude")),
+                    longitude=_row_float_or_none(row.get("longitude")),
+                    is_premium=bool(row.get("is_premium", False)),
+                    phone=str(row.get("phone") or ""),
+                )
+                for row in rows
+                if row.get("id") is not None
+            ]
+            self.error_message = ""
+        except Exception:
+            self.error_message = "Не удалось загрузить избранное. Обновите страницу."
+
     def toggle_favorite(self, listing_id: int) -> None:
         if not self.is_logged_in or not self.user_id:
             self.error_message = "Войдите в аккаунт, чтобы добавлять в избранное."
@@ -718,7 +812,7 @@ class ListingState(AuthState):
                     {"user_id": self.user_id, "listing_id": listing_id}
                 ).execute()
             self.error_message = ""
-            self.load_favorites()
+            self.load_favorite_listings()
         except Exception:
             self.error_message = "Не удалось обновить избранное. Попробуйте еще раз."
 
@@ -784,8 +878,7 @@ class ListingState(AuthState):
 
     @rx.var(cache=True)
     def favorite_listings(self) -> list[Listing]:
-        favorite_ids = set(self.favorite_listing_ids)
-        return [item for item in self.listings if item.id in favorite_ids]
+        return self.favorite_listings_data
 
     @rx.var(cache=True)
     def has_filtered_listings(self) -> bool:

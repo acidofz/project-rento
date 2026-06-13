@@ -77,6 +77,13 @@ def my_listings() -> rx.Component:
                                 value=ListingState.edit_price,
                                 on_change=ListingState.set_edit_price,
                             ),
+                            rx.text(t("create_phone_label"), size="2", color=rx.color("gray", 10)),
+                            rx.input(
+                                placeholder=t("create_ph_phone"),
+                                type="tel",
+                                value=ListingState.edit_phone,
+                                on_change=ListingState.set_edit_phone,
+                            ),
                             rx.hstack(
                                 rx.badge(t("common_normal"), color_scheme="gray", variant="soft"),
                                 rx.badge(t("create_premium_soon"), color_scheme="amber", variant="outline"),

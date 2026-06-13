@@ -28,7 +28,7 @@ def favorites() -> rx.Component:
                 rx.hstack(
                     rx.heading(t("favorites_title"), size="7"),
                     rx.spacer(),
-                    rx.button(t("favorites_refresh"), on_click=ListingState.load_listings, variant="soft"),
+                    rx.button(t("favorites_refresh"), on_click=ListingState.load_favorite_listings, variant="soft"),
                     width="100%",
                 ),
                 rx.text(t("favorites_subtitle"), size="2", color=rx.color("gray", 10), width="100%"),
