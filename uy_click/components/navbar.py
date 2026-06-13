@@ -63,9 +63,9 @@ def _lang_switcher() -> rx.Component:
         )
 
     return rx.hstack(
+        _lang_btn("uz", "UZ"),
         _lang_btn("ru", "RU"),
         _lang_btn("en", "EN"),
-        _lang_btn("uz", "UZ"),
         spacing="1",
     )
 
@@ -89,7 +89,7 @@ def navbar() -> rx.Component:
     )
 
     desktop_links = rx.hstack(
-        *[_desktop_link(key, href) for key, href in _NAV_LINKS[:3]],
+        *[_desktop_link(key, href) for key, href in _NAV_LINKS[:4]],
         spacing="5",
         display=rx.breakpoints(initial="none", lg="flex"),
     )
