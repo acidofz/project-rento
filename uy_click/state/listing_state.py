@@ -850,6 +850,25 @@ class ListingState(AuthState):
             return "Объявление · UY-CLICK"
         return f"{t} · UY-CLICK"
 
+    @rx.var(cache=False)
+    def listing_detail_page_description(self) -> str:
+        title = (self.detail_title or "").strip()
+        district = (self.detail_district or "").strip()
+        rooms = self.detail_rooms
+        price = self.detail_price
+        if not title:
+            return "Аренда жилья без посредников в Узбекистане — UY-CLICK"
+        parts: list[str] = [title]
+        if district:
+            parts.append(f"район {district}")
+        if rooms:
+            parts.append(f"{rooms} комн.")
+        if price:
+            formatted = f"{price:,}".replace(",", " ")
+            parts.append(f"{formatted} сум/мес")
+        parts.append("Аренда напрямую от владельца")
+        return " · ".join(parts)
+
     @rx.var(cache=True)
     def is_editing(self) -> bool:
         return self.edit_listing_id > 0
