@@ -4,3 +4,5 @@ Allow: /
 Disallow: /admin
 Disallow: /health
 Disallow: /ready
+
+Sitemap: https://uy-click.uz/sitemap.xml

@@ -1,19 +1,11 @@
 [phases.setup]
-# Явный список: `["...", "nodejs_22"]` на Railway убрал `uv` из PATH → `uv: command not found`.
-# Node нужен для `reflex export` (сборка фронта в образе, без этого Reflex собирает `.web` при каждом старте).
-nixPkgs = ["python312", "uv", "unzip", "nodejs_22"]
+nixPkgs = ["nodejs_20"]
 
 [phases.install]
-cmds = [
-  "uv sync --frozen",
-  "uv run reflex export --no-zip --env prod",
-  "test -d .web || (echo 'reflex export did not produce .web' >&2; exit 1)",
-]
+cmds = ["cd frontend && npm ci"]
 
-# Nixpacks по умолчанию добавляет сюда `uv sync` без --frozen; заменяем на замороженную установку.
 [phases.build]
-dependsOn = ["install"]
-cmds = ["uv sync --frozen"]
+cmds = ["cd frontend && npm run build"]
 
 [start]
-cmd = "uv run reflex run --env prod --single-port --frontend-port $PORT --backend-host 0.0.0.0 --backend-port $PORT"
+cmd = "cd frontend && npm start"

@@ -44,5 +44,44 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ListingDetailPage({ params }: Props) {
   const listing = await fetchListing(params.id);
-  return <ListingDetailClient listing={listing} />;
+
+  const jsonLd = listing
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'RealEstateListing',
+        name: listing.title,
+        description: [
+          listing.district && `Район: ${listing.district}`,
+          listing.rooms && `Комнат: ${listing.rooms}`,
+          listing.price && `Цена: ${listing.price.toLocaleString('ru-RU')} сум/мес`,
+        ]
+          .filter(Boolean)
+          .join('. '),
+        url: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://uy-click.uz'}/listing/${listing.id}`,
+        image: listing.image_url ?? undefined,
+        offers: {
+          '@type': 'Offer',
+          price: listing.price,
+          priceCurrency: 'UZS',
+          availability: 'https://schema.org/InStock',
+        },
+        address: {
+          '@type': 'PostalAddress',
+          addressLocality: listing.district ?? 'Ташкент',
+          addressCountry: 'UZ',
+        },
+      }
+    : null;
+
+  return (
+    <>
+      {jsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      )}
+      <ListingDetailClient listing={listing} />
+    </>
+  );
 }
