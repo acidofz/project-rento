@@ -30,7 +30,7 @@ function sortListings(items: Listing[], sortBy: SortKey): Listing[] {
 
 export default function ListingsPage() {
   const { t } = useLang();
-  const { isLoggedIn, accessToken } = useAuth();
+  const { isLoggedIn, accessToken, userId } = useAuth();
   const router = useRouter();
 
   const [allListings, setAllListings] = useState<Listing[]>([]);
@@ -91,17 +91,14 @@ export default function ListingsPage() {
   function changeFilter(fn: () => void) { fn(); setPage(1); }
 
   async function toggleFavorite(id: number) {
-    if (!isLoggedIn || !accessToken) return;
+    if (!isLoggedIn || !accessToken || !userId) return;
     const sb = getAuthedClient(accessToken);
     if (favoriteIds.includes(id)) {
-      await sb.from('favorites').delete().eq('user_id', (await getSupabase().auth.getUser()).data.user?.id ?? '').eq('listing_id', id);
+      await sb.from('favorites').delete().eq('user_id', userId).eq('listing_id', id);
       setFavoriteIds((prev) => prev.filter((x) => x !== id));
     } else {
-      const { data: { user } } = await getSupabase().auth.getUser();
-      if (user) {
-        await sb.from('favorites').insert({ user_id: user.id, listing_id: id });
-        setFavoriteIds((prev) => [...prev, id]);
-      }
+      await sb.from('favorites').insert({ user_id: userId, listing_id: id });
+      setFavoriteIds((prev) => [...prev, id]);
     }
   }
 

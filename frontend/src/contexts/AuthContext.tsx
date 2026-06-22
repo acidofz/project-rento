@@ -111,8 +111,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
       }
-    } catch { /* ignore */ }
-    clearAuth();
+      clearAuth();
+    } catch { /* network error — preserve existing auth state */ }
   }, [applySession, clearAuth]);
 
   useEffect(() => {

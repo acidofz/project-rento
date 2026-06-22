@@ -5,7 +5,7 @@ export interface Listing {
   rooms: number;
   price: number;
   owner_id: string;
-  image_url: string;
+  image_url: string | null;
   latitude: number | null;
   longitude: number | null;
   is_premium: boolean;

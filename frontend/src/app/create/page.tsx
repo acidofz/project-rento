@@ -88,7 +88,14 @@ export default function CreatePage() {
 
     const { error: insertError } = await sb.from('listings').insert(row);
     setSubmitting(false);
-    if (insertError) { setError('Не удалось сохранить объявление. Попробуйте ещё раз.'); return; }
+    if (insertError) {
+      if (pendingImageUrl) {
+        const path = pendingImageUrl.split(`/${LISTING_IMAGES_BUCKET}/`)[1];
+        if (path) await sb.storage.from(LISTING_IMAGES_BUCKET).remove([path]);
+      }
+      setError('Не удалось сохранить объявление. Попробуйте ещё раз.');
+      return;
+    }
     setSuccess('Объявление опубликовано.');
     setTimeout(() => router.push('/my-listings'), 1500);
   }

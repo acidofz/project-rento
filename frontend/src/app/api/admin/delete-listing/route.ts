@@ -5,7 +5,7 @@ import { getSupabase } from '@/lib/supabase';
 export const dynamic = 'force-dynamic';
 
 function adminIds(): Set<string> {
-  return new Set((process.env.NEXT_PUBLIC_ADMIN_USER_IDS ?? '').split(',').map((s) => s.trim()).filter(Boolean));
+  return new Set((process.env.ADMIN_USER_IDS ?? '').split(',').map((s) => s.trim()).filter(Boolean));
 }
 
 async function verifyAdmin(req: NextRequest): Promise<boolean> {

@@ -28,7 +28,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }));
 
     return [...staticPages, ...listingPages];
-  } catch {
+  } catch (e) {
+    console.warn('[sitemap] Failed to load listings from Supabase:', e);
     return staticPages;
   }
 }

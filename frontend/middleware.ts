@@ -30,7 +30,8 @@ function buildOgHtml(listingId: string, row: Record<string, unknown>): string {
   descParts.push('Аренда напрямую от владельца');
 
   const description = escapeHtml(descParts.join(' · '));
-  const ogImage = escapeHtml(imageUrl || SITE_OG_IMAGE);
+  const safeImage = imageUrl.startsWith('https://') ? imageUrl : SITE_OG_IMAGE;
+  const ogImage = escapeHtml(safeImage);
   const ogUrl = escapeHtml(`${SITE_URL}/listing/${listingId}`);
   const pageTitle = escapeHtml(title ? `${title} · UY-CLICK` : 'Объявление · UY-CLICK');
 

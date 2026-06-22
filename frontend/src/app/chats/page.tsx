@@ -19,6 +19,8 @@ export default function ChatsPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const mountedRef = useRef(true);
+  useEffect(() => () => { mountedRef.current = false; }, []);
 
   const loadUserLabels = useCallback(async (userIds: string[]) => {
     if (!userIds.length || !auth.accessToken) return {};
@@ -35,9 +37,11 @@ export default function ChatsPage() {
     if (!chatId || !auth.accessToken) return;
     const sb = getAuthedClient(auth.accessToken);
     const { data } = await sb.from('messages').select('id,chat_id,sender_id,body,created_at').eq('chat_id', chatId).order('id', { ascending: true });
+    if (!mountedRef.current) return;
     const rows = (data ?? []) as ChatMessage[];
     const senderIds = Array.from(new Set(rows.map((r) => r.sender_id)));
     const labels = await loadUserLabels(senderIds);
+    if (!mountedRef.current) return;
     setUserLabels((prev) => ({ ...prev, ...labels }));
     setMessages(rows.map((r) => ({ ...r, sender_label: labels[r.sender_id] || `Пользователь ${r.sender_id.slice(0, 8)}`, created_at_label: formatTimestamp(r.created_at) })));
   }, [auth.accessToken, loadUserLabels]);
