@@ -74,7 +74,6 @@ export default function ChatsPage() {
     setQuickContacts(peerIds.map((uid) => ({ user_id: uid, label: labels[uid] || `Пользователь ${uid.slice(0, 8)}` })));
     if (chatList.length && !selectedChatId) {
       setSelectedChatId(chatList[0].id);
-      await loadMessages(chatList[0].id);
     }
   }, [auth.isLoggedIn, auth.accessToken, auth.userId, loadUserLabels, loadMessages, selectedChatId]);
 
@@ -87,9 +86,12 @@ export default function ChatsPage() {
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, [selectedChatId, loadMessages]);
 
-  async function selectChat(chatId: number) {
-    setSelectedChatId(chatId);
-    await loadMessages(chatId);
+  function selectChat(chatId: number) {
+    if (chatId !== selectedChatId) {
+      setSelectedChatId(chatId);
+    } else {
+      loadMessages(chatId);
+    }
   }
 
   async function sendMessage() {
@@ -98,10 +100,13 @@ export default function ChatsPage() {
     if (text.length > 2000) { setError('Сообщение слишком длинное (максимум 2000 символов).'); return; }
     if (auth.isBlocked) { setError('Ваш аккаунт заблокирован.'); return; }
     const sb = getAuthedClient(auth.accessToken);
+    const { data: profile } = await sb.from('profiles').select('is_blocked').eq('id', auth.userId).single();
+    if (profile?.is_blocked) { setError('Ваш аккаунт заблокирован.'); return; }
     const since = new Date(Date.now() - 5 * 60 * 1000).toISOString();
     const { count } = await sb.from('messages').select('id', { count: 'exact', head: true }).eq('sender_id', auth.userId).gte('created_at', since);
     if ((count ?? 0) >= 30) { setError('Слишком много сообщений. Подождите несколько минут.'); return; }
-    await sb.from('messages').insert({ chat_id: selectedChatId, sender_id: auth.userId, body: text });
+    const { error: insertError } = await sb.from('messages').insert({ chat_id: selectedChatId, sender_id: auth.userId, body: text });
+    if (insertError) { setError('Не удалось отправить сообщение.'); return; }
     setNewMessage('');
     setError('');
     await loadMessages(selectedChatId);

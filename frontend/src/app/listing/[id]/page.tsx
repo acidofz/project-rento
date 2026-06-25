@@ -37,7 +37,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       type: 'article',
       title: `${listing.title} · UY-CLICK`,
       description,
-      images: listing.image_url ? [listing.image_url] : [],
+      images: listing.image_url?.startsWith('https://') ? [listing.image_url] : [],
     },
   };
 }

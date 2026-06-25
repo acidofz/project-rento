@@ -37,6 +37,7 @@ export default function ListingsPage() {
   const [favoriteIds, setFavoriteIds] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [capped, setCapped] = useState(false);
 
   const [search, setSearch] = useState('');
   const [district, setDistrict] = useState('');
@@ -50,13 +51,15 @@ export default function ListingsPage() {
   useEffect(() => {
     const sb = getSupabase();
     Promise.all([
-      sb.from('listings').select('id,title,district,rooms,price,owner_id,image_url,latitude,longitude,is_premium,phone').order('id', { ascending: false }),
+      sb.from('listings').select('id,title,district,rooms,price,owner_id,image_url,latitude,longitude,is_premium,phone').order('id', { ascending: false }).limit(500),
       isLoggedIn && accessToken
         ? getAuthedClient(accessToken).from('favorites').select('listing_id')
         : Promise.resolve({ data: [] }),
     ]).then(([listRes, favRes]) => {
       if (listRes.error) setError('Не удалось загрузить объявления.');
-      setAllListings((listRes.data as Listing[]) ?? []);
+      const listings = (listRes.data as Listing[]) ?? [];
+      setAllListings(listings);
+      setCapped(listings.length >= 500);
       setFavoriteIds(((favRes.data ?? []) as { listing_id: number }[]).map((r) => r.listing_id));
     }).finally(() => setLoading(false));
   }, [isLoggedIn, accessToken]);
@@ -161,6 +164,7 @@ export default function ListingsPage() {
       </div>
 
       {error && <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">{error}</div>}
+      {capped && <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-sm text-amber-700">Показаны первые 500 объявлений. Используйте фильтры для уточнения поиска.</div>}
 
       {/* Listings grid */}
       {loading ? (

@@ -5,7 +5,7 @@ import { getSupabase } from '@/lib/supabase';
 export const dynamic = 'force-dynamic';
 
 function adminIds(): Set<string> {
-  const raw = process.env.ADMIN_USER_IDS ?? '';
+  const raw = process.env.ADMIN_USER_IDS ?? process.env.NEXT_PUBLIC_ADMIN_USER_IDS ?? '';
   return new Set(raw.split(',').map((s) => s.trim()).filter(Boolean));
 }
 
@@ -26,13 +26,13 @@ export async function GET(req: NextRequest) {
   const [listingsRes, usersRes, latestListingsRes, latestUsersRes] = await Promise.all([
     sb.from('listings').select('id', { count: 'exact', head: true }),
     sb.from('profiles').select('id', { count: 'exact', head: true }),
-    sb.from('listings').select('id,title,district,price').order('id', { ascending: false }).limit(8),
-    sb.from('profiles').select('id,email,username,is_blocked').order('created_at', { ascending: false }).limit(12),
+    sb.from('listings').select('id,title,district,price,created_at').order('id', { ascending: false }).limit(8),
+    sb.from('profiles').select('id,email,username,is_blocked,created_at').order('created_at', { ascending: false }).limit(12),
   ]);
   return NextResponse.json({
-    listings_count: listingsRes.count ?? 0,
-    users_count: usersRes.count ?? 0,
-    latest_listings: latestListingsRes.data ?? [],
-    latest_users: latestUsersRes.data ?? [],
+    listingCount: listingsRes.count ?? 0,
+    userCount: usersRes.count ?? 0,
+    recentListings: latestListingsRes.data ?? [],
+    recentUsers: latestUsersRes.data ?? [],
   });
 }

@@ -98,21 +98,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const validateAndLoad = useCallback(async (access: string, refresh: string) => {
     const sb = getSupabase();
+    let resolvedAccess = access;
+    let resolvedRefresh = refresh;
+    let userId = '';
+    let email = '';
+
     try {
       const { data: { user }, error } = await sb.auth.getUser(access);
       if (!error && user?.id) {
-        await applySession(access, refresh, user.id, user.email ?? '');
-        return;
-      }
-      if (refresh) {
+        userId = user.id;
+        email = user.email ?? '';
+      } else if (refresh) {
         const { data } = await sb.auth.refreshSession({ refresh_token: refresh });
         if (data.session && data.user) {
-          await applySession(data.session.access_token, data.session.refresh_token ?? '', data.user.id, data.user.email ?? '');
+          resolvedAccess = data.session.access_token;
+          resolvedRefresh = data.session.refresh_token ?? '';
+          userId = data.user.id;
+          email = data.user.email ?? '';
+        } else {
+          clearAuth();
           return;
         }
+      } else {
+        clearAuth();
+        return;
       }
-      clearAuth();
-    } catch { /* network error — preserve existing auth state */ }
+    } catch {
+      if (refresh) {
+        try {
+          const { data } = await sb.auth.refreshSession({ refresh_token: refresh });
+          if (data.session && data.user) {
+            resolvedAccess = data.session.access_token;
+            resolvedRefresh = data.session.refresh_token ?? '';
+            userId = data.user.id;
+            email = data.user.email ?? '';
+          } else {
+            clearAuth();
+            return;
+          }
+        } catch { return; /* network error — preserve existing auth state */ }
+      } else {
+        return;
+      }
+    }
+
+    if (userId) {
+      await applySession(resolvedAccess, resolvedRefresh, userId, email);
+    }
   }, [applySession, clearAuth]);
 
   useEffect(() => {

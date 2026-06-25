@@ -5,7 +5,8 @@ import { getSupabase } from '@/lib/supabase';
 export const dynamic = 'force-dynamic';
 
 function adminIds(): Set<string> {
-  return new Set((process.env.ADMIN_USER_IDS ?? '').split(',').map((s) => s.trim()).filter(Boolean));
+  const raw = process.env.ADMIN_USER_IDS ?? process.env.NEXT_PUBLIC_ADMIN_USER_IDS ?? '';
+  return new Set(raw.split(',').map((s) => s.trim()).filter(Boolean));
 }
 
 async function verifyAdmin(req: NextRequest): Promise<boolean> {
@@ -19,7 +20,8 @@ async function verifyAdmin(req: NextRequest): Promise<boolean> {
 
 export async function POST(req: NextRequest) {
   if (!await verifyAdmin(req)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  const { listing_id } = await req.json() as { listing_id: number };
+  let listing_id: number;
+  try { ({ listing_id } = await req.json() as { listing_id: number }); } catch { return NextResponse.json({ error: 'Invalid request body' }, { status: 400 }); }
   if (!listing_id) return NextResponse.json({ error: 'Missing listing_id' }, { status: 400 });
   const { error } = await getServiceClient().from('listings').delete().eq('id', listing_id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

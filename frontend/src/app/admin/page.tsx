@@ -8,33 +8,33 @@ import { useRouter } from 'next/navigation';
 interface AdminStats {
   listingCount: number;
   userCount: number;
-  recentListings: { id: number; title: string; owner_id: string; created_at: string }[];
-  recentUsers: { id: string; email: string; created_at: string }[];
+  recentListings: { id: number; title: string; district: string; price: number; created_at: string }[];
+  recentUsers: { id: string; email: string; username: string; is_blocked: boolean; created_at: string }[];
 }
 
 export default function AdminPage() {
   const auth = useAuth();
   const router = useRouter();
   const [stats, setStats] = useState<AdminStats | null>(null);
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [actionMsg, setActionMsg] = useState('');
 
-  const adminIds = (process.env.NEXT_PUBLIC_ADMIN_USER_IDS ?? '').split(',').map((s) => s.trim()).filter(Boolean);
-  const isAdmin = auth.userId && adminIds.includes(auth.userId);
-
   useEffect(() => {
-    if (!auth.loading && !auth.isLoggedIn) { router.push('/login'); return; }
-    if (!auth.loading && auth.isLoggedIn && !isAdmin) { router.push('/'); return; }
-  }, [auth.loading, auth.isLoggedIn, isAdmin, router]);
-
-  useEffect(() => {
-    if (auth.loading || !isAdmin || !auth.accessToken) return;
+    if (auth.loading) return;
+    if (!auth.isLoggedIn) { router.push('/login'); return; }
+    if (!auth.accessToken) return;
     fetch('/api/admin/stats', { headers: { Authorization: `Bearer ${auth.accessToken}` } })
-      .then((r) => r.json())
-      .then((data) => { setStats(data); setLoading(false); })
-      .catch(() => { setError('Не удалось загрузить статистику.'); setLoading(false); });
-  }, [auth.loading, isAdmin, auth.accessToken]);
+      .then((r) => {
+        if (!r.ok) { setIsAdmin(false); router.push('/'); return null; }
+        setIsAdmin(true);
+        return r.json() as Promise<AdminStats>;
+      })
+      .then((data) => { if (data) setStats(data); })
+      .catch(() => setError('Не удалось загрузить статистику.'))
+      .finally(() => setLoading(false));
+  }, [auth.loading, auth.isLoggedIn, auth.accessToken, router]);
 
   async function deleteListing(id: number) {
     if (!auth.accessToken) return;
@@ -51,7 +51,7 @@ export default function AdminPage() {
     setActionMsg(`Пользователь ${userId.slice(0, 8)} ${blocked ? 'заблокирован' : 'разблокирован'}.`);
   }
 
-  if (auth.loading) return <div className="flex items-center justify-center min-h-[50vh]"><span className="text-gray-400">...</span></div>;
+  if (auth.loading || loading) return <div className="flex items-center justify-center min-h-[50vh]"><span className="text-gray-400">...</span></div>;
   if (!isAdmin) return null;
 
   return (
@@ -61,9 +61,7 @@ export default function AdminPage() {
       {error && <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">{error}</div>}
       {actionMsg && <div className="p-3 rounded-lg bg-teal-50 border border-teal-200 text-sm text-teal-700">{actionMsg}</div>}
 
-      {loading ? (
-        <div className="text-center py-10 text-gray-400">Загрузка...</div>
-      ) : stats ? (
+      {stats ? (
         <>
           {/* Stats row */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
