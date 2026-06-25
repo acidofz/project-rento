@@ -45,13 +45,14 @@ export function ListingsClient() {
   const [maxPrice, setMaxPrice] = useState('');
   const [minRooms, setMinRooms] = useState('');
   const [maxRooms, setMaxRooms] = useState('');
+  const [filterType, setFilterType] = useState<'all' | 'rent' | 'sale'>('all');
   const [sortBy, setSortBy] = useState<SortKey>('newest');
   const [page, setPage] = useState(1);
 
   useEffect(() => {
     const sb = getSupabase();
     Promise.all([
-      sb.from('listings').select('id,title,district,rooms,price,owner_id,image_url,latitude,longitude,is_premium,phone').order('id', { ascending: false }).limit(500),
+      sb.from('listings').select('id,title,district,rooms,price,owner_id,image_url,latitude,longitude,is_premium,phone,agency,listing_type').order('id', { ascending: false }).limit(500),
       isLoggedIn && accessToken
         ? getAuthedClient(accessToken).from('favorites').select('listing_id')
         : Promise.resolve({ data: [] }),
@@ -78,9 +79,10 @@ export function ListingsClient() {
       if (maxP > 0 && l.price > maxP) return false;
       if (minR > 0 && l.rooms < minR) return false;
       if (maxR > 0 && l.rooms > maxR) return false;
+      if (filterType !== 'all' && l.listing_type !== filterType) return false;
       return true;
     });
-  }, [allListings, search, district, minPrice, maxPrice, minRooms, maxRooms]);
+  }, [allListings, search, district, minPrice, maxPrice, minRooms, maxRooms, filterType]);
 
   const sorted = useMemo(() => sortListings(filtered, sortBy), [filtered, sortBy]);
   const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
@@ -88,7 +90,7 @@ export function ListingsClient() {
 
   function resetFilters() {
     setSearch(''); setDistrict(''); setMinPrice(''); setMaxPrice('');
-    setMinRooms(''); setMaxRooms(''); setSortBy('newest'); setPage(1);
+    setMinRooms(''); setMaxRooms(''); setFilterType('all'); setSortBy('newest'); setPage(1);
   }
 
   function changeFilter(fn: () => void) { fn(); setPage(1); }
@@ -158,9 +160,21 @@ export function ListingsClient() {
             </div>
           </div>
         </div>
-        <button onClick={resetFilters} className="mt-3 text-xs text-gray-500 hover:text-gray-700 transition-colors underline">
-          {t('btn_reset')}
-        </button>
+        <div className="mt-3 flex items-center gap-2 flex-wrap">
+          <span className="text-xs font-medium text-gray-500">{t('filter_type_label')}:</span>
+          {(['all', 'rent', 'sale'] as const).map((v) => (
+            <button
+              key={v}
+              onClick={() => changeFilter(() => setFilterType(v))}
+              className={`px-3 py-1 text-xs rounded-full border font-medium transition-colors ${filterType === v ? 'bg-teal-600 text-white border-teal-600' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+            >
+              {v === 'all' ? t('filter_type_all') : v === 'rent' ? t('listing_type_rent') : t('listing_type_sale')}
+            </button>
+          ))}
+          <button onClick={resetFilters} className="ml-auto text-xs text-gray-500 hover:text-gray-700 transition-colors underline">
+            {t('btn_reset')}
+          </button>
+        </div>
       </div>
 
       {error && <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">{error}</div>}

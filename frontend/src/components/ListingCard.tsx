@@ -66,7 +66,12 @@ export function ListingCard({ listing, isFavorite, onToggleFavorite, roomsSuffix
         </div>
 
         <div className="flex items-center justify-between">
-          <span className="font-bold text-base text-green-700">{formatPriceUzs(listing.price)}</span>
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-base text-green-700">{formatPriceUzs(listing.price)}</span>
+            <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${listing.listing_type === 'sale' ? 'bg-blue-100 text-blue-700' : 'bg-teal-100 text-teal-700'}`}>
+              {listing.listing_type === 'sale' ? 'Продажа' : 'Аренда'}
+            </span>
+          </div>
           <div className="flex items-center gap-1">
             {listing.phone && (
               <a

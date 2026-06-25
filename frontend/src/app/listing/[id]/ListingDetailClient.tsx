@@ -86,6 +86,9 @@ export function ListingDetailClient({ listing }: Props) {
           {/* Title + premium */}
           <div className="flex items-start gap-2 flex-wrap">
             <h1 className="text-xl font-bold text-gray-900 leading-snug flex-1">{listing.title}</h1>
+            <span className={`flex-shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full ${listing.listing_type === 'sale' ? 'bg-blue-500 text-white' : 'bg-teal-500 text-white'}`}>
+              {listing.listing_type === 'sale' ? t('listing_type_sale') : t('listing_type_rent')}
+            </span>
             {listing.is_premium && (
               <span className="flex-shrink-0 bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">★ PREMIUM</span>
             )}
@@ -109,6 +112,17 @@ export function ListingDetailClient({ listing }: Props) {
           </div>
 
           <hr className="border-gray-100" />
+
+          {/* Agency */}
+          {listing.agency && (
+            <div className="p-3 bg-gray-50 border border-gray-200 rounded-xl flex items-center gap-2 text-sm text-gray-700">
+              <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+              <span className="text-gray-500">{t('detail_agency_label')}:</span>
+              <span className="font-medium">{listing.agency}</span>
+            </div>
+          )}
 
           {/* Phone */}
           {listing.phone ? (

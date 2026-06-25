@@ -10,6 +10,8 @@ export interface Listing {
   longitude: number | null;
   is_premium: boolean;
   phone: string;
+  agency: string | null;
+  listing_type: 'rent' | 'sale';
   created_at?: string;
 }
 

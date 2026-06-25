@@ -11,7 +11,7 @@ async function fetchListing(id: string): Promise<Listing | null> {
     const sb = getSupabase();
     const { data } = await sb
       .from('listings')
-      .select('id,title,district,rooms,price,owner_id,image_url,latitude,longitude,is_premium,phone')
+      .select('id,title,district,rooms,price,owner_id,image_url,latitude,longitude,is_premium,phone,agency,listing_type')
       .eq('id', Number(id))
       .limit(1)
       .single();
@@ -23,11 +23,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const listing = await fetchListing(params.id);
   if (!listing) return { title: 'Объявление не найдено · UY-CLICK' };
 
+  const typeLabel = listing.listing_type === 'sale' ? 'Продажа напрямую от владельца' : 'Аренда напрямую от владельца';
   const parts: string[] = [listing.title];
   if (listing.district) parts.push(`район ${listing.district}`);
   if (listing.rooms) parts.push(`${listing.rooms} комн.`);
-  if (listing.price) parts.push(`${listing.price.toLocaleString('ru-RU')} сум/мес`);
-  parts.push('Аренда напрямую от владельца');
+  if (listing.price) parts.push(`${listing.price.toLocaleString('ru-RU')} сум`);
+  parts.push(typeLabel);
   const description = parts.join(' · ');
 
   const url = `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://uy-click.uz'}/listing/${listing.id}`;
@@ -71,7 +72,7 @@ export default async function ListingDetailPage({ params }: Props) {
         },
         address: {
           '@type': 'PostalAddress',
-          addressLocality: listing.district ?? 'Ташкент',
+          addressLocality: listing.district ?? 'Самарканд',
           addressCountry: 'UZ',
         },
       }

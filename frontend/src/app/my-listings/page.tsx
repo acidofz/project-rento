@@ -7,6 +7,7 @@ import { useLang } from '@/contexts/LangContext';
 import { getAuthedClient } from '@/lib/supabase';
 import { Listing } from '@/lib/types';
 import { ListingCard } from '@/components/ListingCard';
+import { MapPicker } from '@/components/MapPicker';
 import { validateCoords, validateFile, fileExtension } from '@/lib/utils';
 import { LISTING_IMAGES_BUCKET } from '@/lib/constants';
 
@@ -19,11 +20,13 @@ export default function MyListingsPage() {
   const [success, setSuccess] = useState('');
 
   const [editingId, setEditingId] = useState(0);
+  const [editListingType, setEditListingType] = useState<'rent' | 'sale'>('rent');
   const [editTitle, setEditTitle] = useState('');
   const [editDistrict, setEditDistrict] = useState('');
   const [editRooms, setEditRooms] = useState('1');
   const [editPrice, setEditPrice] = useState('');
   const [editPhone, setEditPhone] = useState('');
+  const [editAgency, setEditAgency] = useState('');
   const [editLat, setEditLat] = useState('');
   const [editLng, setEditLng] = useState('');
   const [editImageUrl, setEditImageUrl] = useState('');
@@ -32,7 +35,11 @@ export default function MyListingsPage() {
   async function load() {
     if (!auth.isLoggedIn || !auth.accessToken || !auth.userId) return;
     setLoading(true);
-    const { data, error: err } = await getAuthedClient(auth.accessToken).from('listings').select('id,title,district,rooms,price,owner_id,image_url,latitude,longitude,is_premium,phone').eq('owner_id', auth.userId).order('id', { ascending: false });
+    const { data, error: err } = await getAuthedClient(auth.accessToken)
+      .from('listings')
+      .select('id,title,district,rooms,price,owner_id,image_url,latitude,longitude,is_premium,phone,agency,listing_type')
+      .eq('owner_id', auth.userId)
+      .order('id', { ascending: false });
     if (err) setError('Не удалось загрузить объявления.');
     else setListings((data as Listing[]) ?? []);
     setLoading(false);
@@ -42,11 +49,13 @@ export default function MyListingsPage() {
 
   function startEdit(l: Listing) {
     setEditingId(l.id);
+    setEditListingType(l.listing_type ?? 'rent');
     setEditTitle(l.title);
     setEditDistrict(l.district);
     setEditRooms(String(l.rooms));
     setEditPrice(String(l.price));
     setEditPhone(l.phone || '');
+    setEditAgency(l.agency || '');
     setEditLat(l.latitude != null ? String(l.latitude) : '');
     setEditLng(l.longitude != null ? String(l.longitude) : '');
     setEditImageUrl(l.image_url || '');
@@ -78,12 +87,14 @@ export default function MyListingsPage() {
     const coordsResult = validateCoords(editLat, editLng);
     if (typeof coordsResult === 'string') { setError(coordsResult); return; }
     const row: Record<string, unknown> = {
+      listing_type: editListingType,
       title: editTitle.slice(0, 200),
       district: editDistrict.slice(0, 100),
       rooms: Math.max(1, parseInt(editRooms) || 1),
       price: parseInt(editPrice),
       image_url: editImageUrl || null,
       phone: editPhone.trim().slice(0, 30) || null,
+      agency: editAgency.trim().slice(0, 100) || null,
       latitude: Array.isArray(coordsResult) ? coordsResult[0] : null,
       longitude: Array.isArray(coordsResult) ? coordsResult[1] : null,
     };
@@ -119,6 +130,16 @@ export default function MyListingsPage() {
       {editingId > 0 && (
         <div className="bg-white rounded-xl border border-teal-200 p-5 space-y-3">
           <h2 className="font-bold text-gray-900">{t('edit_page_title')}</h2>
+
+          {/* Type toggle */}
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-gray-500">{t('listing_type_label')}</label>
+            <div className="flex gap-2">
+              <button type="button" onClick={() => setEditListingType('rent')} className={`flex-1 py-2 rounded-xl text-sm font-semibold border transition-colors ${editListingType === 'rent' ? 'bg-teal-600 text-white border-teal-600' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}>{t('listing_type_rent')}</button>
+              <button type="button" onClick={() => setEditListingType('sale')} className={`flex-1 py-2 rounded-xl text-sm font-semibold border transition-colors ${editListingType === 'sale' ? 'bg-teal-600 text-white border-teal-600' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}>{t('listing_type_sale')}</button>
+            </div>
+          </div>
+
           <input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
           <div className="grid grid-cols-2 gap-3">
             <input value={editDistrict} onChange={(e) => setEditDistrict(e.target.value)} className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
@@ -127,11 +148,12 @@ export default function MyListingsPage() {
           <input type="number" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
           <input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} placeholder={t('create_ph_phone')} className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
           <div>
+            <label className="text-xs font-medium text-gray-500 block mb-1">{t('edit_agency_label')}</label>
+            <input value={editAgency} onChange={(e) => setEditAgency(e.target.value.slice(0, 100))} placeholder={t('create_ph_agency')} className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
+          </div>
+          <div>
             <label className="text-xs font-medium text-gray-500 block mb-1">{t('edit_location_label')}</label>
-            <div className="grid grid-cols-2 gap-3">
-              <input value={editLat} onChange={(e) => setEditLat(e.target.value)} placeholder={t('create_ph_lat')} className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
-              <input value={editLng} onChange={(e) => setEditLng(e.target.value)} placeholder={t('create_ph_lng')} className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
-            </div>
+            <MapPicker lat={editLat} lng={editLng} onChange={(la, ln) => { setEditLat(la); setEditLng(ln); }} />
           </div>
           <div>
             <label className="text-xs font-medium text-gray-500 block mb-1">{t('edit_photo_label')}</label>

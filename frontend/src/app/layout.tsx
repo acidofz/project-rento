@@ -8,8 +8,8 @@ import { Footer } from '@/components/Footer';
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://uy-click.uz';
 
 export const metadata: Metadata = {
-  title: 'UY-CLICK — Аренда жилья без посредников в Ташкенте',
-  description: 'Снимайте и сдавайте квартиры по всему Узбекистану напрямую без посредников и комиссий.',
+  title: 'UY-CLICK — Недвижимость в Самарканде: аренда и продажа',
+  description: 'Снимайте, сдавайте и покупайте недвижимость в Самарканде напрямую без посредников и комиссий.',
   metadataBase: new URL(SITE_URL),
   openGraph: {
     type: 'website',
@@ -25,7 +25,7 @@ const websiteJsonLd = {
   '@type': 'WebSite',
   name: 'UY-CLICK',
   url: SITE_URL,
-  description: 'Аренда жилья без посредников в Узбекистане',
+  description: 'Аренда и продажа недвижимости в Самарканде без посредников',
   potentialAction: {
     '@type': 'SearchAction',
     target: { '@type': 'EntryPoint', urlTemplate: `${SITE_URL}/listings?q={search_term_string}` },
@@ -38,7 +38,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ru">
       <head>
         <meta name="theme-color" content="#0d9488" />
-        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}

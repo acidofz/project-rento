@@ -57,7 +57,7 @@ export default function HomePage() {
   useEffect(() => {
     const sb = getSupabase();
     Promise.all([
-      sb.from('listings').select('id,title,district,rooms,price,owner_id,image_url,latitude,longitude,is_premium,phone').order('id', { ascending: false }).limit(6),
+      sb.from('listings').select('id,title,district,rooms,price,owner_id,image_url,latitude,longitude,is_premium,phone,agency,listing_type').order('id', { ascending: false }).limit(6),
       sb.from('listings').select('id', { count: 'exact', head: true }),
     ]).then(([listRes, countRes]) => {
       setListings((listRes.data as Listing[]) ?? []);

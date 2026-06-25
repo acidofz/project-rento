@@ -335,3 +335,11 @@ using (
     bucket_id = 'listing-images'
     and name like auth.uid()::text || '/%'
 );
+
+-- Тип объявления: аренда или продажа (default: rent для обратной совместимости)
+ALTER TABLE public.listings ADD COLUMN IF NOT EXISTS listing_type text NOT NULL DEFAULT 'rent';
+ALTER TABLE public.listings DROP CONSTRAINT IF EXISTS listings_listing_type_check;
+ALTER TABLE public.listings ADD CONSTRAINT listings_listing_type_check CHECK (listing_type IN ('rent', 'sale'));
+
+-- Агентство (необязательно)
+ALTER TABLE public.listings ADD COLUMN IF NOT EXISTS agency text;

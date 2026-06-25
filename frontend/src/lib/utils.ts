@@ -1,4 +1,4 @@
-import { ALLOWED_IMAGE_TYPES, MAX_IMAGE_SIZE, UZ_BOUNDS } from './constants';
+import { ALLOWED_IMAGE_TYPES, MAX_IMAGE_SIZE, SAMARKAND_BOUNDS } from './constants';
 
 export function formatPriceUzs(value: number): string {
   return value.toLocaleString('ru-RU') + ' UZS';
@@ -21,9 +21,12 @@ export function validateCoords(
   if (!a || !b) return 'Укажите и широту, и долготу, или оставьте оба поля пустыми.';
   const lat = parseFloat(a);
   const lng = parseFloat(b);
-  if (isNaN(lat) || isNaN(lng)) return 'Широта и долгота должны быть числами (например 41.31 и 69.28).';
-  if (lat < UZ_BOUNDS.lat.min || lat > UZ_BOUNDS.lat.max || lng < UZ_BOUNDS.lng.min || lng > UZ_BOUNDS.lng.max) {
-    return 'Координаты вне допустимого региона (ожидается территория Узбекистана).';
+  if (isNaN(lat) || isNaN(lng)) return 'Широта и долгота должны быть числами (например 39.65 и 66.97).';
+  if (
+    lat < SAMARKAND_BOUNDS.lat.min || lat > SAMARKAND_BOUNDS.lat.max ||
+    lng < SAMARKAND_BOUNDS.lng.min || lng > SAMARKAND_BOUNDS.lng.max
+  ) {
+    return 'Координаты вне допустимого региона (ожидается территория Самарканда).';
   }
   return [lat, lng];
 }

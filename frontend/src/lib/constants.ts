@@ -15,9 +15,10 @@ export const BOT_AGENTS = [
   'okhttp',
 ];
 
-export const UZ_BOUNDS = {
-  lat: { min: 37.0, max: 45.6 },
-  lng: { min: 56.0, max: 73.2 },
+export const SAMARKAND_CENTER: [number, number] = [39.6547, 66.9758];
+export const SAMARKAND_BOUNDS = {
+  lat: { min: 39.3, max: 39.9 },
+  lng: { min: 66.6, max: 67.3 },
 };
 
 export const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];

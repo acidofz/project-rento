@@ -7,17 +7,20 @@ import { useLang } from '@/contexts/LangContext';
 import { getAuthedClient } from '@/lib/supabase';
 import { validateCoords, validateFile, fileExtension } from '@/lib/utils';
 import { LISTING_IMAGES_BUCKET } from '@/lib/constants';
+import { MapPicker } from '@/components/MapPicker';
 
 export default function CreatePage() {
   const { t } = useLang();
   const auth = useRequireAuth();
   const router = useRouter();
 
+  const [listingType, setListingType] = useState<'rent' | 'sale'>('rent');
   const [title, setTitle] = useState('');
   const [district, setDistrict] = useState('');
   const [rooms, setRooms] = useState('1');
   const [price, setPrice] = useState('');
   const [phone, setPhone] = useState('');
+  const [agency, setAgency] = useState('');
   const [lat, setLat] = useState('');
   const [lng, setLng] = useState('');
   const [pendingImageUrl, setPendingImageUrl] = useState('');
@@ -68,7 +71,6 @@ export default function CreatePage() {
     if (typeof coordsResult === 'string') { setError(coordsResult); return; }
 
     const sb = getAuthedClient(auth.accessToken);
-    // Rate limit check
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const { count } = await sb.from('listings').select('id', { count: 'exact', head: true }).eq('owner_id', auth.userId).gte('created_at', since);
     if ((count ?? 0) >= 10) { setError('Максимум 10 объявлений за 24 часа. Попробуйте позже.'); return; }
@@ -76,6 +78,7 @@ export default function CreatePage() {
     setSubmitting(true);
     setError('');
     const row: Record<string, unknown> = {
+      listing_type: listingType,
       title: title.slice(0, 200),
       district: district.slice(0, 100),
       rooms: Math.max(1, parseInt(rooms) || 1),
@@ -83,6 +86,7 @@ export default function CreatePage() {
       owner_id: auth.userId,
     };
     if (phone.trim()) row.phone = phone.trim().slice(0, 30);
+    if (agency.trim()) row.agency = agency.trim().slice(0, 100);
     if (pendingImageUrl) row.image_url = pendingImageUrl;
     if (Array.isArray(coordsResult)) { row.latitude = coordsResult[0]; row.longitude = coordsResult[1]; }
 
@@ -111,6 +115,36 @@ export default function CreatePage() {
       {success && <div className="p-3 rounded-lg bg-green-50 border border-green-200 text-sm text-green-700">{success}</div>}
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Listing type toggle */}
+        <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-2">
+          <label className="text-sm font-medium text-gray-700">{t('listing_type_label')}</label>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setListingType('rent')}
+              className={`flex-1 py-2 rounded-xl text-sm font-semibold border transition-colors ${
+                listingType === 'rent'
+                  ? 'bg-teal-600 text-white border-teal-600'
+                  : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              {t('listing_type_rent')}
+            </button>
+            <button
+              type="button"
+              onClick={() => setListingType('sale')}
+              className={`flex-1 py-2 rounded-xl text-sm font-semibold border transition-colors ${
+                listingType === 'sale'
+                  ? 'bg-teal-600 text-white border-teal-600'
+                  : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              {t('listing_type_sale')}
+            </button>
+          </div>
+        </div>
+
+        {/* Main fields */}
         <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
           <input value={title} onChange={(e) => setTitle(e.target.value.slice(0, 200))} placeholder={t('create_ph_title')} className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
           <div className="grid grid-cols-2 gap-3">
@@ -121,6 +155,10 @@ export default function CreatePage() {
           <div>
             <label className="text-xs font-medium text-gray-500 block mb-1">{t('create_phone_label')}</label>
             <input value={phone} onChange={(e) => setPhone(e.target.value.slice(0, 30))} placeholder={t('create_ph_phone')} className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-gray-500 block mb-1">{t('create_agency_label')}</label>
+            <input value={agency} onChange={(e) => setAgency(e.target.value.slice(0, 100))} placeholder={t('create_ph_agency')} className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
           </div>
         </div>
 
@@ -143,13 +181,10 @@ export default function CreatePage() {
           )}
         </div>
 
-        {/* Location */}
+        {/* Location map picker */}
         <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-2">
           <label className="text-sm font-medium text-gray-700">{t('create_location_label')}</label>
-          <div className="grid grid-cols-2 gap-3">
-            <input value={lat} onChange={(e) => setLat(e.target.value)} placeholder={t('create_ph_lat')} className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
-            <input value={lng} onChange={(e) => setLng(e.target.value)} placeholder={t('create_ph_lng')} className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
-          </div>
+          <MapPicker lat={lat} lng={lng} onChange={(la, ln) => { setLat(la); setLng(ln); }} />
         </div>
 
         <div className="flex items-center gap-3 flex-wrap">
