@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Listing } from '@/lib/types';
 import { useLang } from '@/contexts/LangContext';
@@ -65,8 +66,16 @@ export function ListingDetailClient({ listing }: Props) {
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
         {/* Image */}
         {listing.image_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={listing.image_url} alt={listing.title} className="w-full max-h-[400px] object-cover" />
+          <div className="relative w-full h-[400px]">
+            <Image
+              src={listing.image_url}
+              alt={listing.title}
+              fill
+              sizes="(max-width: 768px) 100vw, 672px"
+              className="object-cover"
+              priority
+            />
+          </div>
         ) : (
           <div className="w-full h-48 bg-gray-100 flex items-center justify-center">
             <span className="text-sm text-gray-400">{t('detail_no_photo')}</span>

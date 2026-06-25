@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { Listing } from '@/lib/types';
 import { formatPriceUzs } from '@/lib/utils';
 
@@ -21,12 +22,12 @@ export function ListingCard({ listing, isFavorite, onToggleFavorite, roomsSuffix
       {/* Image area */}
       <div className="relative h-[200px] bg-gray-100 overflow-hidden">
         {listing.image_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             src={listing.image_url}
             alt={listing.title}
-            loading="lazy"
-            className="w-full h-full object-cover"
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            className="object-cover"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">

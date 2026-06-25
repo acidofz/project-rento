@@ -1,8 +1,8 @@
-# UY-CLICK — Аренда жилья без риелторов (Python + Reflex)
+# UY-CLICK — Аренда жилья без посредников
 
 P2P-платформа для прямой аренды жилья в Ташкенте и Узбекистане.
 
-## 🎯 Цель проекта
+## Цель проекта
 
 Создать удобную платформу, где хозяева и арендаторы могут общаться напрямую, без риелторов и посредников.
 
@@ -21,24 +21,22 @@ P2P-платформа для прямой аренды жилья в Ташке
 5. **Реклама** — смежные категории (мебель, ремонт, переезды).
 6. **Страхование** — партнёрства со страховщиками, реферальная/агентская модель.
 
-## 🛠 Текущий стек
+## Текущий стек
 
-- **Язык**: Python 3.12
-- **Фреймворк**: Reflex (full-stack Python)
+- **Фреймворк**: Next.js 14 (App Router)
+- **Язык**: TypeScript
+- **Стили**: Tailwind CSS
 - **База данных**: Supabase (PostgreSQL + Auth + Storage + Realtime)
-- **Стили**: Reflex + Tailwind (через custom theme)
+- **Карта**: Leaflet + OpenStreetMap
 - **Деплой**: Railway / Render (рекомендуется)
-- **Мобильные клиенты**: вместо PWA планируются **нативные** приложения в **Google Play** и **App Store** (отдельный проект под магазины; этот репозиторий — веб).
+- **Мобильные клиенты**: планируются **нативные** приложения в **Google Play** и **App Store** (отдельный проект; этот репозиторий — веб).
 
 ## Дорожная карта к запуску (продукт, не презентация)
-
-Ниже — приоритеты после текущего MVP: что отделяет «можно показать» от «можно открыть людям и спать спокойно».
 
 ### Фаза A — Стабильный прод
 - Домен + HTTPS (у хостинга вроде Railway/Render обычно уже есть; свой домен — по желанию).
 - Бэкапы и понятный план восстановления Supabase (БД + Storage).
-- Мониторинг: логи деплоя, алерты при падении сервиса, периодическая проверка `/ping`, при необходимости **`/ready`** (Supabase) и страницы **`/health`**; ключевые сценарии (вход, лента, чат).
-- На Railway healthcheck платформы настроен на **`/ping`** (встроенный JSON Reflex). Дополнительно: **`/_health`** (Reflex), **`/ready`** (доступность Supabase), страница **`/health`** — для ручной проверки в браузере. Скрипт: `scripts/smoke_deploy.sh`.
+- Мониторинг: логи деплоя, алерты при падении сервиса; ручная проверка страниц **`/health`** и главной. Скрипт: `scripts/smoke_deploy.sh`.
 
 ### Фаза B — Продукт под первых пользователей
 - Чат: либо **Supabase Realtime**, либо оставить текущее автообновление и позже усилить — исходя из нагрузки и ожиданий.
@@ -52,12 +50,9 @@ P2P-платформа для прямой аренды жилья в Ташке
 - Жалобы на объявления/пользователей, расширенная модерация при росте трафика.
 - Оптимизация скорости (картинки, кэш, лишние запросы к Supabase) по метрикам, а не «на будущее».
 
-### Уже пройдено (исторический скелет плана)
-Фундамент, объявления с поиском и картой, избранное, чат, админка, деплой и SEO — закрыты в текущей версии кода; дальше — итерации из фаз A–C и отдельно нативные приложения в сторах.
-
 ---
 
-## ✅ Что уже реализовано
+## Что уже реализовано
 
 - Авторизация через Supabase (`register/login/logout`)
 - Объявления:
@@ -65,7 +60,7 @@ P2P-платформа для прямой аренды жилья в Ташке
   - список, фильтры, сортировка, пагинация ленты (12 на страницу)
   - премиум-объявления (визуальная метка + приоритет в выдаче)
   - мои объявления
-  - страница объявления `/listing/[id]` (ссылка с заголовка в карточке; динамический **title** вкладки через state)
+  - страница объявления `/listing/[id]`
   - карта `/map` (Leaflet + OSM): маркеры у объявлений с заполненными `latitude` / `longitude` в БД
   - обложка (одно фото на объявление): Supabase Storage, бакет `listing-images`, путь `{user_id}/...`; в БД поле `listings.image_url` (см. `supabase_schema.sql`)
 - Избранное объявлений
@@ -75,93 +70,96 @@ P2P-платформа для прямой аренды жилья в Ташке
   - старт чата из карточки объявления
   - быстрые контакты
   - автообновление сообщений на странице «Чаты» (polling)
+- Интернационализация: три языка — **ru / en / uz**
 - Админ-панель:
   - сводные метрики
   - удаление объявлений и сообщений
   - блок/разблок пользователей
 - Health-check страница `/health`
-- Публичные страницы **`/terms`**, **`/privacy`**, **`/monetization`** (план монетизации), общий футер со ссылками
+- Публичные страницы **`/terms`**, **`/privacy`**, **`/monetization`**, общий футер
+- SEO: `robots.txt`, `sitemap.ts`, Open Graph, JSON-LD
 
-## 📝 Релизный changelog
+## Релизный changelog
 
 ### v0.1.0 (MVP)
 
-- Запущена рабочая p2p-платформа аренды на Reflex + Supabase.
+- Запущена рабочая p2p-платформа аренды на Next.js + Supabase.
 - Добавлены регистрация, вход и профиль пользователя.
 - Реализован полный цикл объявлений: создание, просмотр, редактирование, удаление.
 - Добавлены фильтры, сортировка, избранное и раздел "Мои объявления".
 - Реализован чат между пользователями с быстрым стартом из карточки объявления.
 - Добавлена админ-панель: метрики, удаление контента, блокировка пользователей.
-- Подготовлена SEO-основа (`robots.txt`, `sitemap`).
-- Подготовлены конфиги деплоя для Railway/Render с single-port запуском.
-- Обновлены UX-тексты: скрыты технические детали ошибок, сообщения стали короче и понятнее.
+- Подготовлена SEO-основа (`robots.txt`, `sitemap`, Open Graph).
+- Подготовлены конфиги деплоя для Railway/Render.
 - Добавлены страницы правил и персональных данных (`/terms`, `/privacy`) и единый футер на основных экранах.
+- Интернационализация: ru / en / uz.
 
-## 📁 Актуальная структура проекта
+## Структура проекта
 
-```bash
+```
 uy-click/
 ├── .github/
 │   └── workflows/
 │       └── ci.yml
-├── LAUNCH_CHECKLIST.md
+├── frontend/                   # Next.js 14 приложение
+│   ├── src/
+│   │   ├── app/                # App Router страницы и API-роуты
+│   │   │   ├── page.tsx        # Главная
+│   │   │   ├── listings/       # Лента объявлений
+│   │   │   ├── listing/[id]/   # Страница объявления
+│   │   │   ├── create/         # Создать объявление
+│   │   │   ├── my-listings/    # Мои объявления
+│   │   │   ├── map/            # Карта
+│   │   │   ├── chats/          # Чат
+│   │   │   ├── favorites/      # Избранное
+│   │   │   ├── profile/        # Профиль
+│   │   │   ├── admin/          # Админ-панель
+│   │   │   ├── api/admin/      # Серверные API-роуты (SERVICE_ROLE)
+│   │   │   ├── login/
+│   │   │   ├── register/
+│   │   │   ├── terms/
+│   │   │   ├── privacy/
+│   │   │   ├── monetization/
+│   │   │   └── health/
+│   │   ├── components/         # Navbar, Footer, ListingCard, SkeletonCard, Pagination
+│   │   ├── contexts/           # AuthContext, LangContext
+│   │   ├── hooks/
+│   │   ├── lib/                # supabase.ts, types.ts, i18n.ts, constants.ts, utils.ts
+│   │   └── global.d.ts
+│   ├── public/
+│   ├── package.json
+│   └── next.config.mjs
 ├── scripts/
 │   └── smoke_deploy.sh
-├── uy_click/
-│   ├── components/
-│   │   ├── footer.py
-│   │   ├── listing_card.py
-│   │   └── navbar.py
-│   ├── pages/
-│   │   ├── admin.py
-│   │   ├── chats.py
-│   │   ├── create.py
-│   │   ├── favorites.py
-│   │   ├── health.py
-│   │   ├── index.py
-│   │   ├── listing_detail.py
-│   │   ├── map_page.py
-│   │   ├── listings.py
-│   │   ├── login.py
-│   │   ├── my_listings.py
-│   │   ├── privacy.py
-│   │   ├── profile.py
-│   │   ├── register.py
-│   │   ├── terms.py
-│   │   └── monetization.py
-│   ├── state/
-│   │   ├── admin_state.py
-│   │   ├── auth_state.py
-│   │   ├── chat_state.py
-│   │   └── listing_state.py
-│   ├── utils/helpers.py
-│   ├── ready_layer.py
-│   ├── uy_click.py
-│   └── supabase_client.py
 ├── assets/
-│   ├── icon.svg
-│   └── robots.txt
+│   └── icon.svg
 ├── supabase_schema.sql
-├── rxconfig.py
-├── pyproject.toml
-├── uv.lock
+├── nixpacks.toml
+├── Procfile
+├── railway.json
 └── README.md
-
-## 🚀 Быстрый старт (локально)
-
-1. Установить зависимости:
-
-```bash
-uv sync
 ```
 
-2. Создать `.env` на основе `.env.example` и заполнить:
-- `SUPABASE_URL`
-- `SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY` (для админ-функций)
-- `ADMIN_USER_IDS` (UUID админов через запятую)
+## Быстрый старт (локально)
 
-3. Применить SQL-схему в Supabase SQL Editor (включая колонку `image_url`, бакет `listing-images` и политики Storage):
+1. Перейти в директорию фронтенда и установить зависимости:
+
+```bash
+cd frontend
+npm install
+```
+
+2. Создать `frontend/.env.local` на основе `frontend/.env.example` и заполнить:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+NEXT_PUBLIC_ADMIN_USER_IDS=uuid1,uuid2
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+```
+
+3. Применить SQL-схему в Supabase SQL Editor:
 
 ```sql
 -- Выполнить содержимое файла:
@@ -171,64 +169,55 @@ uv sync
 4. Запустить приложение:
 
 ```bash
-uv run reflex run
+npm run dev
 ```
 
-5. Проверить служебный роут:
-- `http://localhost:3000/health`
+5. Открыть `http://localhost:3000`
 
-## 🧪 Сборка перед деплоем
+## Сборка перед деплоем
 
 ```bash
-uv run python -m compileall uy_click
-uv run reflex export
+cd frontend
+npm run build
 ```
 
-Если команды проходят успешно, проект готов к выкладке.
+Если команда проходит без ошибок, проект готов к выкладке.
 
-Те же шаги выполняются в **GitHub Actions** (workflow `.github/workflows/ci.yml`) на push/PR в `main` или `master`.
+## Мини-чеклист деплоя (Railway/Render)
 
-## 🌍 Мини-чеклист деплоя (Railway/Render)
-
-- Добавить переменные окружения из `.env`
-- Убедиться, что `ADMIN_USER_IDS` заполнен
-- Убедиться, что `supabase_schema.sql` применен
-- Убедиться, что деплой прошёл healthcheck (на Railway это **`/ping`**); вручную открыть **`/health`** и главную
+- Добавить переменные окружения из `frontend/.env.example`
+- Убедиться, что `NEXT_PUBLIC_ADMIN_USER_IDS` заполнен
+- Убедиться, что `supabase_schema.sql` применён в Supabase
+- Убедиться, что деплой прошёл healthcheck; вручную открыть `/health` и главную
 - Проверить, что `/sitemap.xml` и `/robots.txt` открываются
 
-## ☁️ Деплой-конфиги (готово)
+## Деплой-конфиги (готово)
 
-В проекте уже добавлены файлы для платформ:
-- `railway.json` — настройки деплоя Railway
-- `nixpacks.toml` — явные шаги сборки и запуска
-- `Procfile` — fallback-команда запуска
-- `render.yaml` — декларативный деплой на Render
+- `railway.json` — настройки деплоя Railway (builder: Nixpacks, healthcheck на `/`)
+- `nixpacks.toml` — явные шаги сборки и запуска (`cd frontend && npm ci && npm run build`)
+- `Procfile` — fallback-команда запуска (`cd frontend && npm start`)
 
 ### Railway
 
 1. Подключи репозиторий в Railway.
-2. Проверь, что выбран правильный branch и root (где лежат `pyproject.toml` и `uy_click/`).
+2. Убедись, что выбран корневой каталог репозитория (не `frontend/`) — `nixpacks.toml` сам делает `cd frontend`.
 3. Добавь ENV:
-   - `SUPABASE_URL`
-   - `SUPABASE_ANON_KEY`
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `NEXT_PUBLIC_SITE_URL`
+   - `NEXT_PUBLIC_ADMIN_USER_IDS`
    - `SUPABASE_SERVICE_ROLE_KEY`
-   - `ADMIN_USER_IDS`
-4. Дождись деплоя; healthcheck сервиса идёт на **`/ping`**. Для ручной проверки открой **`/health`** или главную.
+4. Дождись деплоя; healthcheck идёт на `/`. Для ручной проверки открой `/health` или главную.
 
 ### Render
 
-1. Создай Web Service из репозитория (или Blueprint через `render.yaml`).
-2. Добавь те же ENV переменные.
-3. После деплоя проверь **`/ping`** (если платформа ходит за healthcheck) и вручную **`/health`** или главную.
+1. Создай Web Service из репозитория.
+2. Build Command: `cd frontend && npm ci && npm run build`
+3. Start Command: `cd frontend && npm start`
+4. Добавь те же ENV переменные.
 
-## ⚙️ Файлы деплоя в репозитории
+## SEO и индексация
 
-- `railway.json` — явная конфигурация Railway
-- `nixpacks.toml` — команды сборки/запуска для Nixpacks
-- `Procfile` — fallback-команда запуска
-- `render.yaml` — шаблон деплоя для Render
-
-## 🔎 SEO и индексация
-
-- `robots.txt` добавлен в `assets/robots.txt`
-- `SitemapPlugin` включен в `rxconfig.py`
+- `robots.txt` — в `frontend/public/robots.txt`
+- `sitemap.ts` — в `frontend/src/app/sitemap.ts` (динамическая генерация)
+- Open Graph и JSON-LD (`WebSite` schema) — в `frontend/src/app/layout.tsx`

@@ -30,13 +30,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   parts.push('Аренда напрямую от владельца');
   const description = parts.join(' · ');
 
+  const url = `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://uy-click.uz'}/listing/${listing.id}`;
+
   return {
     title: `${listing.title} · UY-CLICK`,
     description,
+    alternates: { canonical: url },
     openGraph: {
       type: 'article',
       title: `${listing.title} · UY-CLICK`,
       description,
+      url,
       images: listing.image_url?.startsWith('https://') ? [listing.image_url] : [],
     },
   };

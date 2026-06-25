@@ -1,8 +1,18 @@
 User-agent: *
 Allow: /
+Allow: /listings
+Allow: /listing/
+Allow: /map
 
+Disallow: /api/
 Disallow: /admin
 Disallow: /health
-Disallow: /ready
+Disallow: /chats
+Disallow: /favorites
+Disallow: /my-listings
+Disallow: /create
+Disallow: /profile
+Disallow: /login
+Disallow: /register
 
 Sitemap: https://uy-click.uz/sitemap.xml

@@ -11,7 +11,6 @@ export const metadata: Metadata = {
   title: 'UY-CLICK — Аренда жилья без посредников в Ташкенте',
   description: 'Снимайте и сдавайте квартиры по всему Узбекистану напрямую без посредников и комиссий.',
   metadataBase: new URL(SITE_URL),
-  alternates: { canonical: SITE_URL },
   openGraph: {
     type: 'website',
     siteName: 'UY-CLICK',
