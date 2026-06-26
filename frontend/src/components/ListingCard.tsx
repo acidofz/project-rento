@@ -21,9 +21,9 @@ export function ListingCard({ listing, isFavorite, onToggleFavorite, roomsSuffix
     >
       {/* Image area */}
       <div className="relative h-[200px] bg-gray-100 overflow-hidden">
-        {listing.image_url ? (
+        {(listing.image_urls?.[0] ?? listing.image_url) ? (
           <Image
-            src={listing.image_url}
+            src={(listing.image_urls?.[0] ?? listing.image_url)!}
             alt={listing.title}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"

@@ -52,7 +52,7 @@ export function ListingsClient() {
   useEffect(() => {
     const sb = getSupabase();
     Promise.all([
-      sb.from('listings').select('id,title,district,rooms,price,owner_id,image_url,latitude,longitude,is_premium,phone,agency,listing_type').order('id', { ascending: false }).limit(500),
+      sb.from('listings').select('id,title,district,rooms,price,owner_id,image_url,image_urls,latitude,longitude,is_premium,phone,agency,listing_type').order('id', { ascending: false }).limit(500),
       isLoggedIn && accessToken
         ? getAuthedClient(accessToken).from('favorites').select('listing_id')
         : Promise.resolve({ data: [] }),

@@ -25,7 +25,7 @@ export default function FavoritesPage() {
     const ids = (favRows ?? []).map((r: { listing_id: number }) => r.listing_id);
     setFavoriteIds(ids);
     if (!ids.length) { setListings([]); setLoading(false); return; }
-    const { data, error: listErr } = await sb.from('listings').select('id,title,district,rooms,price,owner_id,image_url,latitude,longitude,is_premium,phone').in('id', ids).order('id', { ascending: false });
+    const { data, error: listErr } = await sb.from('listings').select('id,title,district,rooms,price,owner_id,image_url,image_urls,latitude,longitude,is_premium,phone,agency,listing_type').in('id', ids).order('id', { ascending: false });
     if (listErr) { setError('Не удалось загрузить объявления.'); } else { setListings((data as Listing[]) ?? []); }
     setLoading(false);
   }

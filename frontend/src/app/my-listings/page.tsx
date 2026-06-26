@@ -19,6 +19,7 @@ export default function MyListingsPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  const MAX_PHOTOS = 10;
   const [editingId, setEditingId] = useState(0);
   const [editListingType, setEditListingType] = useState<'rent' | 'sale'>('rent');
   const [editTitle, setEditTitle] = useState('');
@@ -29,15 +30,16 @@ export default function MyListingsPage() {
   const [editAgency, setEditAgency] = useState('');
   const [editLat, setEditLat] = useState('');
   const [editLng, setEditLng] = useState('');
-  const [editImageUrl, setEditImageUrl] = useState('');
+  const [editImageUrls, setEditImageUrls] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   async function load() {
     if (!auth.isLoggedIn || !auth.accessToken || !auth.userId) return;
     setLoading(true);
     const { data, error: err } = await getAuthedClient(auth.accessToken)
       .from('listings')
-      .select('id,title,district,rooms,price,owner_id,image_url,latitude,longitude,is_premium,phone,agency,listing_type')
+      .select('id,title,district,rooms,price,owner_id,image_url,image_urls,latitude,longitude,is_premium,phone,agency,listing_type')
       .eq('owner_id', auth.userId)
       .order('id', { ascending: false });
     if (err) setError('Не удалось загрузить объявления.');
@@ -58,27 +60,41 @@ export default function MyListingsPage() {
     setEditAgency(l.agency || '');
     setEditLat(l.latitude != null ? String(l.latitude) : '');
     setEditLng(l.longitude != null ? String(l.longitude) : '');
-    setEditImageUrl(l.image_url || '');
+    const imgs = l.image_urls?.length ? l.image_urls : l.image_url ? [l.image_url] : [];
+    setEditImageUrls(imgs);
     setError('');
   }
 
   function cancelEdit() { setEditingId(0); setError(''); }
 
-  async function handleEditPhoto(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file || !auth.accessToken || !auth.userId) return;
-    const err = validateFile(file);
-    if (err) { setError(err); return; }
+  async function handleEditPhotos(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length || !auth.accessToken || !auth.userId) return;
+    const remaining = MAX_PHOTOS - editImageUrls.length;
+    if (remaining <= 0) { setError(`Максимум ${MAX_PHOTOS} фотографий.`); return; }
+    const toUpload = files.slice(0, remaining);
+    for (const file of toUpload) {
+      const err = validateFile(file);
+      if (err) { setError(err); return; }
+    }
     setUploading(true);
+    setUploadProgress(0);
     try {
-      const ext = fileExtension(file);
-      const path = `${auth.userId}/${crypto.randomUUID()}${ext}`;
       const sb = getAuthedClient(auth.accessToken);
-      await sb.storage.from(LISTING_IMAGES_BUCKET).upload(path, file, { contentType: file.type, upsert: true });
-      const { data } = sb.storage.from(LISTING_IMAGES_BUCKET).getPublicUrl(path);
-      setEditImageUrl(data.publicUrl);
+      const uploaded: string[] = [];
+      for (let i = 0; i < toUpload.length; i++) {
+        const file = toUpload[i];
+        const ext = fileExtension(file);
+        const path = `${auth.userId}/${crypto.randomUUID()}${ext}`;
+        const { error: uploadError } = await sb.storage.from(LISTING_IMAGES_BUCKET).upload(path, file, { contentType: file.type, upsert: true });
+        if (uploadError) throw uploadError;
+        const { data } = sb.storage.from(LISTING_IMAGES_BUCKET).getPublicUrl(path);
+        uploaded.push(data.publicUrl);
+        setUploadProgress(Math.round(((i + 1) / toUpload.length) * 100));
+      }
+      setEditImageUrls((prev) => [...prev, ...uploaded]);
     } catch (e) { setError(String(e)); }
-    finally { setUploading(false); }
+    finally { setUploading(false); setUploadProgress(0); e.target.value = ''; }
   }
 
   async function saveEdit() {
@@ -91,8 +107,9 @@ export default function MyListingsPage() {
       title: editTitle.slice(0, 200),
       district: editDistrict.slice(0, 100),
       rooms: Math.max(1, parseInt(editRooms) || 1),
-      price: parseInt(editPrice),
-      image_url: editImageUrl || null,
+      price: Math.round(Number(editPrice)),
+      image_url: editImageUrls[0] ?? null,
+      image_urls: editImageUrls,
       phone: editPhone.trim().slice(0, 30) || null,
       agency: editAgency.trim().slice(0, 100) || null,
       latitude: Array.isArray(coordsResult) ? coordsResult[0] : null,
@@ -156,21 +173,38 @@ export default function MyListingsPage() {
             <MapPicker lat={editLat} lng={editLng} onChange={(la, ln) => { setEditLat(la); setEditLng(ln); }} />
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-500 block mb-1">{t('edit_photo_label')}</label>
-            {editImageUrl && (
-              <div className="relative mb-2">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={editImageUrl} alt="" className="w-full h-32 object-cover rounded-xl border border-gray-200" />
-                <button type="button" onClick={() => setEditImageUrl('')} className="absolute top-2 right-2 bg-white/90 text-red-600 text-xs font-medium px-2 py-1 rounded-lg border border-gray-200">{t('create_photo_remove')}</button>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs font-medium text-gray-500">{t('edit_photo_label')}</label>
+              <span className="text-xs text-gray-400">{editImageUrls.length}/{MAX_PHOTOS}</span>
+            </div>
+            {editImageUrls.length > 0 && (
+              <div className="grid grid-cols-3 gap-2 mb-2">
+                {editImageUrls.map((url, i) => (
+                  <div key={url} className="relative aspect-square rounded-xl overflow-hidden border border-gray-200">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={url} alt="" className="w-full h-full object-cover" />
+                    {i === 0 && <span className="absolute top-1 left-1 bg-teal-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">Обложка</span>}
+                    <button type="button" onClick={() => setEditImageUrls((prev) => prev.filter((_, j) => j !== i))} className="absolute top-1 right-1 w-5 h-5 bg-black/60 text-white rounded-full flex items-center justify-center text-xs hover:bg-black/80">×</button>
+                  </div>
+                ))}
               </div>
             )}
-            <label className="block w-full border-2 border-dashed border-gray-200 rounded-xl p-4 text-center cursor-pointer hover:border-teal-400 transition-colors">
-              <span className="text-sm text-gray-400">{uploading ? 'Загрузка...' : t('edit_photo_replace')}</span>
-              <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleEditPhoto} className="hidden" disabled={uploading} />
-            </label>
+            {editImageUrls.length < MAX_PHOTOS && (
+              <label className="block w-full border-2 border-dashed border-gray-200 rounded-xl p-4 text-center cursor-pointer hover:border-teal-400 transition-colors">
+                {uploading ? (
+                  <div className="space-y-1">
+                    <span className="text-sm text-gray-400">Загрузка... {uploadProgress}%</span>
+                    <div className="w-full bg-gray-100 rounded-full h-1.5"><div className="bg-teal-500 h-1.5 rounded-full transition-all" style={{ width: `${uploadProgress}%` }} /></div>
+                  </div>
+                ) : (
+                  <span className="text-sm text-gray-400">{editImageUrls.length === 0 ? 'Добавить фото' : 'Добавить ещё'} — перетащите или выберите</span>
+                )}
+                <input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={handleEditPhotos} className="hidden" disabled={uploading} />
+              </label>
+            )}
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={saveEdit} className="px-5 py-2 bg-teal-600 text-white font-semibold text-sm rounded-xl hover:bg-teal-700 transition-colors">{t('edit_btn_save')}</button>
+            <button onClick={saveEdit} disabled={uploading} className="px-5 py-2 bg-teal-600 text-white font-semibold text-sm rounded-xl hover:bg-teal-700 transition-colors disabled:opacity-50">{t('edit_btn_save')}</button>
             <button onClick={cancelEdit} className="px-5 py-2 border border-gray-200 text-gray-600 text-sm rounded-xl hover:bg-gray-50 transition-colors">{t('edit_btn_cancel')}</button>
           </div>
         </div>

@@ -6,6 +6,7 @@ export interface Listing {
   price: number;
   owner_id: string;
   image_url: string | null;
+  image_urls: string[];
   latitude: number | null;
   longitude: number | null;
   is_premium: boolean;

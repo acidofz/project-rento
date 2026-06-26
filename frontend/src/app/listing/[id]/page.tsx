@@ -11,7 +11,7 @@ async function fetchListing(id: string): Promise<Listing | null> {
     const sb = getSupabase();
     const { data } = await sb
       .from('listings')
-      .select('id,title,district,rooms,price,owner_id,image_url,latitude,longitude,is_premium,phone,agency,listing_type')
+      .select('id,title,district,rooms,price,owner_id,image_url,image_urls,latitude,longitude,is_premium,phone,agency,listing_type')
       .eq('id', Number(id))
       .limit(1)
       .single();

@@ -64,23 +64,31 @@ export function ListingDetailClient({ listing }: Props) {
       </Link>
 
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-        {/* Image */}
-        {listing.image_url ? (
-          <div className="relative w-full h-[400px]">
-            <Image
-              src={listing.image_url}
-              alt={listing.title}
-              fill
-              sizes="(max-width: 768px) 100vw, 672px"
-              className="object-cover"
-              priority
-            />
-          </div>
-        ) : (
-          <div className="w-full h-48 bg-gray-100 flex items-center justify-center">
-            <span className="text-sm text-gray-400">{t('detail_no_photo')}</span>
-          </div>
-        )}
+        {/* Image gallery */}
+        {(() => {
+          const photos = (listing.image_urls?.length ? listing.image_urls : listing.image_url ? [listing.image_url] : []);
+          if (!photos.length) return (
+            <div className="w-full h-48 bg-gray-100 flex items-center justify-center">
+              <span className="text-sm text-gray-400">{t('detail_no_photo')}</span>
+            </div>
+          );
+          return (
+            <div className="space-y-1">
+              <div className="relative w-full h-[360px]">
+                <Image src={photos[0]} alt={listing.title} fill sizes="(max-width: 768px) 100vw, 672px" className="object-cover" priority />
+              </div>
+              {photos.length > 1 && (
+                <div className="grid grid-cols-4 gap-1 px-1 pb-1">
+                  {photos.slice(1).map((url, i) => (
+                    <div key={url} className="relative aspect-square rounded-lg overflow-hidden">
+                      <Image src={url} alt={`${listing.title} ${i + 2}`} fill sizes="150px" className="object-cover" />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         <div className="p-5 space-y-4">
           {/* Title + premium */}

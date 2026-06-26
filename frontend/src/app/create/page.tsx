@@ -9,6 +9,8 @@ import { validateCoords, validateFile, fileExtension } from '@/lib/utils';
 import { LISTING_IMAGES_BUCKET } from '@/lib/constants';
 import { MapPicker } from '@/components/MapPicker';
 
+const MAX_PHOTOS = 10;
+
 export default function CreatePage() {
   const { t } = useLang();
   const auth = useRequireAuth();
@@ -23,35 +25,58 @@ export default function CreatePage() {
   const [agency, setAgency] = useState('');
   const [lat, setLat] = useState('');
   const [lng, setLng] = useState('');
-  const [pendingImageUrl, setPendingImageUrl] = useState('');
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   if (auth.loading) return <div className="flex items-center justify-center min-h-[50vh]"><span className="text-gray-400">...</span></div>;
 
-  async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const err = validateFile(file);
-    if (err) { setError(err); return; }
+  async function handlePhotosChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length) return;
     if (!auth.accessToken || !auth.userId) { setError('Войдите в аккаунт.'); return; }
+
+    const remaining = MAX_PHOTOS - imageUrls.length;
+    if (remaining <= 0) { setError(`Максимум ${MAX_PHOTOS} фотографий.`); return; }
+    const toUpload = files.slice(0, remaining);
+
+    for (const file of toUpload) {
+      const err = validateFile(file);
+      if (err) { setError(err); return; }
+    }
+
     setUploading(true);
     setError('');
+    setUploadProgress(0);
+
     try {
-      const ext = fileExtension(file);
-      const path = `${auth.userId}/${crypto.randomUUID()}${ext}`;
       const sb = getAuthedClient(auth.accessToken);
-      const { error: uploadError } = await sb.storage.from(LISTING_IMAGES_BUCKET).upload(path, file, { contentType: file.type, upsert: true });
-      if (uploadError) throw uploadError;
-      const { data } = sb.storage.from(LISTING_IMAGES_BUCKET).getPublicUrl(path);
-      setPendingImageUrl(data.publicUrl);
+      const uploaded: string[] = [];
+      for (let i = 0; i < toUpload.length; i++) {
+        const file = toUpload[i];
+        const ext = fileExtension(file);
+        const path = `${auth.userId}/${crypto.randomUUID()}${ext}`;
+        const { error: uploadError } = await sb.storage.from(LISTING_IMAGES_BUCKET).upload(path, file, { contentType: file.type, upsert: true });
+        if (uploadError) throw uploadError;
+        const { data } = sb.storage.from(LISTING_IMAGES_BUCKET).getPublicUrl(path);
+        uploaded.push(data.publicUrl);
+        setUploadProgress(Math.round(((i + 1) / toUpload.length) * 100));
+      }
+      setImageUrls((prev) => [...prev, ...uploaded]);
     } catch (e) {
       setError(String(e));
     } finally {
       setUploading(false);
+      setUploadProgress(0);
+      e.target.value = '';
     }
+  }
+
+  function removePhoto(index: number) {
+    setImageUrls((prev) => prev.filter((_, i) => i !== index));
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -70,36 +95,30 @@ export default function CreatePage() {
     const coordsResult = validateCoords(lat, lng);
     if (typeof coordsResult === 'string') { setError(coordsResult); return; }
 
+    setSubmitting(true);
     const sb = getAuthedClient(auth.accessToken);
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const { count } = await sb.from('listings').select('id', { count: 'exact', head: true }).eq('owner_id', auth.userId).gte('created_at', since);
-    if ((count ?? 0) >= 10) { setError('Максимум 10 объявлений за 24 часа. Попробуйте позже.'); return; }
+    if ((count ?? 0) >= 10) { setSubmitting(false); setError('Максимум 10 объявлений за 24 часа. Попробуйте позже.'); return; }
 
-    setSubmitting(true);
     setError('');
     const row: Record<string, unknown> = {
       listing_type: listingType,
       title: title.slice(0, 200),
       district: district.slice(0, 100),
       rooms: Math.max(1, parseInt(rooms) || 1),
-      price: parseInt(price),
+      price: Math.round(Number(price)),
       owner_id: auth.userId,
+      image_url: imageUrls[0] ?? null,
+      image_urls: imageUrls,
     };
     if (phone.trim()) row.phone = phone.trim().slice(0, 30);
     if (agency.trim()) row.agency = agency.trim().slice(0, 100);
-    if (pendingImageUrl) row.image_url = pendingImageUrl;
     if (Array.isArray(coordsResult)) { row.latitude = coordsResult[0]; row.longitude = coordsResult[1]; }
 
     const { error: insertError } = await sb.from('listings').insert(row);
     setSubmitting(false);
-    if (insertError) {
-      if (pendingImageUrl) {
-        const path = pendingImageUrl.split(`/${LISTING_IMAGES_BUCKET}/`)[1];
-        if (path) await sb.storage.from(LISTING_IMAGES_BUCKET).remove([path]);
-      }
-      setError('Не удалось сохранить объявление. Попробуйте ещё раз.');
-      return;
-    }
+    if (insertError) { setError('Не удалось сохранить объявление. Попробуйте ещё раз.'); return; }
     setSuccess('Объявление опубликовано.');
     setTimeout(() => router.push('/my-listings'), 1500);
   }
@@ -119,28 +138,8 @@ export default function CreatePage() {
         <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-2">
           <label className="text-sm font-medium text-gray-700">{t('listing_type_label')}</label>
           <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setListingType('rent')}
-              className={`flex-1 py-2 rounded-xl text-sm font-semibold border transition-colors ${
-                listingType === 'rent'
-                  ? 'bg-teal-600 text-white border-teal-600'
-                  : 'border-gray-200 text-gray-600 hover:bg-gray-50'
-              }`}
-            >
-              {t('listing_type_rent')}
-            </button>
-            <button
-              type="button"
-              onClick={() => setListingType('sale')}
-              className={`flex-1 py-2 rounded-xl text-sm font-semibold border transition-colors ${
-                listingType === 'sale'
-                  ? 'bg-teal-600 text-white border-teal-600'
-                  : 'border-gray-200 text-gray-600 hover:bg-gray-50'
-              }`}
-            >
-              {t('listing_type_sale')}
-            </button>
+            <button type="button" onClick={() => setListingType('rent')} className={`flex-1 py-2 rounded-xl text-sm font-semibold border transition-colors ${listingType === 'rent' ? 'bg-teal-600 text-white border-teal-600' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}>{t('listing_type_rent')}</button>
+            <button type="button" onClick={() => setListingType('sale')} className={`flex-1 py-2 rounded-xl text-sm font-semibold border transition-colors ${listingType === 'sale' ? 'bg-teal-600 text-white border-teal-600' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}>{t('listing_type_sale')}</button>
           </div>
         </div>
 
@@ -162,23 +161,61 @@ export default function CreatePage() {
           </div>
         </div>
 
-        {/* Photo */}
-        <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-2">
-          <label className="text-sm font-medium text-gray-700">{t('create_photo_label')}</label>
-          {pendingImageUrl ? (
-            <div className="relative">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={pendingImageUrl} alt="" className="w-full h-40 object-cover rounded-xl border border-gray-200" />
-              <button type="button" onClick={() => setPendingImageUrl('')} className="absolute top-2 right-2 bg-white/90 text-red-600 text-xs font-medium px-2 py-1 rounded-lg border border-gray-200 hover:bg-white transition-colors">
-                {t('create_photo_remove')}
-              </button>
+        {/* Photos */}
+        <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium text-gray-700">{t('create_photo_label')}</label>
+            <span className="text-xs text-gray-400">{imageUrls.length}/{MAX_PHOTOS}</span>
+          </div>
+
+          {/* Preview grid */}
+          {imageUrls.length > 0 && (
+            <div className="grid grid-cols-3 gap-2">
+              {imageUrls.map((url, i) => (
+                <div key={url} className="relative aspect-square rounded-xl overflow-hidden border border-gray-200">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={url} alt="" className="w-full h-full object-cover" />
+                  {i === 0 && (
+                    <span className="absolute top-1 left-1 bg-teal-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">Обложка</span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => removePhoto(i)}
+                    className="absolute top-1 right-1 w-5 h-5 bg-black/60 text-white rounded-full flex items-center justify-center text-xs hover:bg-black/80 transition-colors"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
             </div>
-          ) : (
-            <label className="block w-full border-2 border-dashed border-gray-200 rounded-xl p-6 text-center cursor-pointer hover:border-teal-400 transition-colors">
-              <span className="text-sm text-gray-400">{uploading ? 'Загрузка...' : t('create_photo_drop')}</span>
-              <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handlePhotoChange} className="hidden" disabled={uploading} />
+          )}
+
+          {/* Upload button */}
+          {imageUrls.length < MAX_PHOTOS && (
+            <label className="block w-full border-2 border-dashed border-gray-200 rounded-xl p-4 text-center cursor-pointer hover:border-teal-400 transition-colors">
+              {uploading ? (
+                <div className="space-y-1">
+                  <span className="text-sm text-gray-400">Загрузка... {uploadProgress}%</span>
+                  <div className="w-full bg-gray-100 rounded-full h-1.5">
+                    <div className="bg-teal-500 h-1.5 rounded-full transition-all" style={{ width: `${uploadProgress}%` }} />
+                  </div>
+                </div>
+              ) : (
+                <span className="text-sm text-gray-400">
+                  {imageUrls.length === 0 ? 'Добавить фото (до 10)' : 'Добавить ещё фото'} — перетащите или выберите
+                </span>
+              )}
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                multiple
+                onChange={handlePhotosChange}
+                className="hidden"
+                disabled={uploading}
+              />
             </label>
           )}
+          <p className="text-xs text-gray-400">Первое фото — обложка объявления. Перетащите чтобы изменить порядок.</p>
         </div>
 
         {/* Location map picker */}
