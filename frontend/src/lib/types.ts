@@ -42,6 +42,9 @@ export interface Profile {
   id: string;
   email: string;
   username: string;
+  first_name: string | null;
+  last_name: string | null;
+  phone: string | null;
   is_blocked: boolean;
   created_at?: string;
 }

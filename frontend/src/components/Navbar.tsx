@@ -74,10 +74,17 @@ export function Navbar() {
         <div className="hidden lg:flex items-center gap-2">
           {isLoggedIn ? (
             <>
-              <Link href="/profile" className={`text-sm font-medium px-2 py-1 rounded-lg ${isBlocked ? 'text-red-600 bg-red-50' : 'text-gray-700 hover:bg-gray-100'}`}>
-                {isBlocked ? t('nav_blocked') : userName}
+              <Link
+                href="/profile"
+                className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl transition-colors ${isBlocked ? 'text-red-600 bg-red-50 hover:bg-red-100' : 'text-gray-700 hover:bg-gray-100'}`}
+                title="Профиль"
+              >
+                <span className="w-7 h-7 rounded-full bg-gradient-to-br from-teal-500 to-teal-700 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                  {isBlocked ? '⛔' : userName?.slice(0, 1).toUpperCase() || '?'}
+                </span>
+                <span className="text-sm font-medium max-w-[120px] truncate">{isBlocked ? t('nav_blocked') : userName}</span>
               </Link>
-              <button onClick={() => logout()} className="text-sm text-gray-500 hover:text-gray-700 transition-colors px-2 py-1">
+              <button onClick={() => logout()} className="text-sm text-gray-400 hover:text-gray-600 transition-colors px-2 py-1">
                 {t('nav_sign_out')}
               </button>
             </>
@@ -127,8 +134,11 @@ export function Navbar() {
           <div className="pt-1 border-t border-gray-100">
             {isLoggedIn ? (
               <div className="flex items-center justify-between">
-                <Link href="/profile" className="text-sm text-gray-700 font-medium px-3 py-2" onClick={() => setMenuOpen(false)}>
-                  {isBlocked ? `⛔ ${userName}` : userName}
+                <Link href="/profile" className="flex items-center gap-2 px-2 py-2" onClick={() => setMenuOpen(false)}>
+                  <span className="w-7 h-7 rounded-full bg-gradient-to-br from-teal-500 to-teal-700 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                    {isBlocked ? '⛔' : userName?.slice(0, 1).toUpperCase() || '?'}
+                  </span>
+                  <span className={`text-sm font-medium ${isBlocked ? 'text-red-600' : 'text-gray-700'}`}>{isBlocked ? t('nav_blocked') : userName}</span>
                 </Link>
                 <button onClick={() => { logout(); setMenuOpen(false); }} className="text-sm text-gray-500 px-3 py-2 hover:text-gray-700">
                   {t('nav_sign_out')}
