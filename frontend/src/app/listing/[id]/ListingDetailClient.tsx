@@ -17,6 +17,7 @@ export function ListingDetailClient({ listing }: Props) {
   const { isLoggedIn, accessToken, userId } = useAuth();
   const router = useRouter();
   const [isFavorite, setIsFavorite] = useState(false);
+  const [activePhoto, setActivePhoto] = useState(0);
 
   useEffect(() => {
     if (!isLoggedIn || !accessToken || !listing) return;
@@ -66,23 +67,38 @@ export function ListingDetailClient({ listing }: Props) {
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
         {/* Image gallery */}
         {(() => {
-          const photos = (listing.image_urls?.length ? listing.image_urls : listing.image_url ? [listing.image_url] : []);
+          const photos = listing.image_urls?.length ? listing.image_urls : listing.image_url ? [listing.image_url] : [];
           if (!photos.length) return (
             <div className="w-full h-48 bg-gray-100 flex items-center justify-center">
               <span className="text-sm text-gray-400">{t('detail_no_photo')}</span>
             </div>
           );
+          const current = photos[Math.min(activePhoto, photos.length - 1)];
           return (
-            <div className="space-y-1">
-              <div className="relative w-full h-[360px]">
-                <Image src={photos[0]} alt={listing.title} fill sizes="(max-width: 768px) 100vw, 672px" className="object-cover" priority />
+            <div>
+              {/* Main photo */}
+              <div className="relative w-full h-[360px] bg-gray-100">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={current} alt={listing.title} className="w-full h-full object-cover" />
+                {photos.length > 1 && (
+                  <span className="absolute bottom-2 right-2 bg-black/50 text-white text-xs font-medium px-2 py-0.5 rounded-full">
+                    {Math.min(activePhoto, photos.length - 1) + 1} / {photos.length}
+                  </span>
+                )}
               </div>
+              {/* Thumbnails strip */}
               {photos.length > 1 && (
-                <div className="grid grid-cols-4 gap-1 px-1 pb-1">
-                  {photos.slice(1).map((url, i) => (
-                    <div key={url} className="relative aspect-square rounded-lg overflow-hidden">
-                      <Image src={url} alt={`${listing.title} ${i + 2}`} fill sizes="150px" className="object-cover" />
-                    </div>
+                <div className="flex gap-1 p-1 overflow-x-auto">
+                  {photos.map((url, i) => (
+                    <button
+                      key={url + i}
+                      type="button"
+                      onClick={() => setActivePhoto(i)}
+                      className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-colors ${i === Math.min(activePhoto, photos.length - 1) ? 'border-teal-500' : 'border-transparent hover:border-gray-300'}`}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={url} alt={`фото ${i + 1}`} className="w-full h-full object-cover" />
+                    </button>
                   ))}
                 </div>
               )}

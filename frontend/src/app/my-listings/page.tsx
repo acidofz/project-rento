@@ -11,6 +11,8 @@ import { MapPicker } from '@/components/MapPicker';
 import { validateCoords, validateFile, fileExtension } from '@/lib/utils';
 import { LISTING_IMAGES_BUCKET } from '@/lib/constants';
 
+const MAX_PHOTOS = 10;
+
 export default function MyListingsPage() {
   const { t } = useLang();
   const auth = useRequireAuth();
@@ -18,8 +20,8 @@ export default function MyListingsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
-  const MAX_PHOTOS = 10;
   const [editingId, setEditingId] = useState(0);
   const [editListingType, setEditListingType] = useState<'rent' | 'sale'>('rent');
   const [editTitle, setEditTitle] = useState('');
@@ -102,22 +104,26 @@ export default function MyListingsPage() {
     if (!auth.accessToken || !auth.userId) return;
     const coordsResult = validateCoords(editLat, editLng);
     if (typeof coordsResult === 'string') { setError(coordsResult); return; }
-    const row: Record<string, unknown> = {
-      listing_type: editListingType,
-      title: editTitle.slice(0, 200),
-      district: editDistrict.slice(0, 100),
-      rooms: Math.max(1, parseInt(editRooms) || 1),
-      price: Math.round(Number(editPrice)),
-      image_url: editImageUrls[0] ?? null,
-      image_urls: editImageUrls,
-      phone: editPhone.trim().slice(0, 30) || null,
-      agency: editAgency.trim().slice(0, 100) || null,
-      latitude: Array.isArray(coordsResult) ? coordsResult[0] : null,
-      longitude: Array.isArray(coordsResult) ? coordsResult[1] : null,
-    };
-    const { error: err } = await getAuthedClient(auth.accessToken).from('listings').update(row).eq('id', editingId).eq('owner_id', auth.userId);
-    if (err) { setError('Не удалось обновить объявление.'); return; }
-    setSuccess('Объявление обновлено.'); cancelEdit(); load();
+    setSubmitting(true);
+    try {
+      const row: Record<string, unknown> = {
+        listing_type: editListingType,
+        title: editTitle.slice(0, 200),
+        district: editDistrict.slice(0, 100),
+        rooms: Math.max(1, parseInt(editRooms) || 1),
+        price: Math.round(Number(editPrice)),
+        image_url: editImageUrls[0] ?? null,
+        image_urls: editImageUrls,
+        phone: editPhone.trim().slice(0, 30) || null,
+        agency: editAgency.trim().slice(0, 100) || null,
+        latitude: Array.isArray(coordsResult) ? coordsResult[0] : null,
+        longitude: Array.isArray(coordsResult) ? coordsResult[1] : null,
+      };
+      const { error: err } = await getAuthedClient(auth.accessToken).from('listings').update(row).eq('id', editingId).eq('owner_id', auth.userId);
+      if (err) { setError('Не удалось обновить объявление.'); return; }
+      setSuccess('Объявление обновлено.'); cancelEdit(); load();
+    } catch { setError('Произошла ошибка. Попробуйте снова.'); }
+    finally { setSubmitting(false); }
   }
 
   async function deleteListing(id: number) {
@@ -204,7 +210,7 @@ export default function MyListingsPage() {
             )}
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={saveEdit} disabled={uploading} className="px-5 py-2 bg-teal-600 text-white font-semibold text-sm rounded-xl hover:bg-teal-700 transition-colors disabled:opacity-50">{t('edit_btn_save')}</button>
+            <button onClick={saveEdit} disabled={submitting || uploading} className="px-5 py-2 bg-teal-600 text-white font-semibold text-sm rounded-xl hover:bg-teal-700 transition-colors disabled:opacity-50">{submitting ? '...' : t('edit_btn_save')}</button>
             <button onClick={cancelEdit} className="px-5 py-2 border border-gray-200 text-gray-600 text-sm rounded-xl hover:bg-gray-50 transition-colors">{t('edit_btn_cancel')}</button>
           </div>
         </div>

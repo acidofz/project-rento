@@ -70,13 +70,20 @@ async function upsertProfile(userId: string, email: string, accessToken: string,
   const { getAuthedClient } = await import('@/lib/supabase');
   const sb = getAuthedClient(accessToken);
   const username = (email.split('@')[0] ?? '').trim() || 'user';
-  const row: Record<string, unknown> = { id: userId, email, username };
-  if (extra?.firstName?.trim()) row.first_name = extra.firstName.trim().slice(0, 50);
-  if (extra?.lastName?.trim()) row.last_name = extra.lastName.trim().slice(0, 50);
-  if (extra?.phone?.trim()) row.phone = extra.phone.trim().slice(0, 30);
   try {
-    await sb.from('profiles').upsert(row, { onConflict: 'id' });
-  } catch { /* ignore */ }
+    // Try to insert the base row; ignore conflict if profile already exists.
+    await sb.from('profiles').insert({ id: userId, email, username }).throwOnError();
+  } catch { /* profile row already exists — don't overwrite username */ }
+  // Only update extra fields (first_name, last_name, phone) if explicitly provided.
+  if (extra?.firstName?.trim() || extra?.lastName?.trim() || extra?.phone?.trim()) {
+    const update: Record<string, unknown> = {};
+    if (extra.firstName?.trim()) update.first_name = extra.firstName.trim().slice(0, 50);
+    if (extra.lastName?.trim()) update.last_name = extra.lastName.trim().slice(0, 50);
+    if (extra.phone?.trim()) update.phone = extra.phone.trim().slice(0, 30);
+    try {
+      await sb.from('profiles').update(update).eq('id', userId);
+    } catch { /* ignore */ }
+  }
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {

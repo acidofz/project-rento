@@ -1,6 +1,5 @@
 import { Metadata } from 'next';
 import { getServiceClient } from '@/lib/supabase-server';
-import { getSupabase } from '@/lib/supabase';
 import { Listing } from '@/lib/types';
 import { PublicProfileClient } from './PublicProfileClient';
 
@@ -22,12 +21,11 @@ export default async function PublicProfilePage({ params }: Props) {
   if (!isValidUuid(params.id)) return <NotFound />;
 
   const sb = getServiceClient();
-  const anon = getSupabase();
 
   const [profileRes, listingsRes, countRes] = await Promise.all([
     sb.from('profiles').select('id,first_name,last_name,username').eq('id', params.id).limit(1).single(),
-    anon.from('listings').select('id,title,district,rooms,price,owner_id,image_url,image_urls,latitude,longitude,is_premium,phone,agency,listing_type').eq('owner_id', params.id).order('id', { ascending: false }).limit(20),
-    anon.from('listings').select('id', { count: 'exact', head: true }).eq('owner_id', params.id),
+    sb.from('listings').select('id,title,district,rooms,price,owner_id,image_url,image_urls,latitude,longitude,is_premium,phone,agency,listing_type').eq('owner_id', params.id).order('id', { ascending: false }).limit(20),
+    sb.from('listings').select('id', { count: 'exact', head: true }).eq('owner_id', params.id),
   ]);
 
   if (!profileRes.data) return <NotFound />;

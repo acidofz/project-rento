@@ -96,31 +96,33 @@ export default function CreatePage() {
     if (typeof coordsResult === 'string') { setError(coordsResult); return; }
 
     setSubmitting(true);
-    const sb = getAuthedClient(auth.accessToken);
-    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    const { count } = await sb.from('listings').select('id', { count: 'exact', head: true }).eq('owner_id', auth.userId).gte('created_at', since);
-    if ((count ?? 0) >= 10) { setSubmitting(false); setError('Максимум 10 объявлений за 24 часа. Попробуйте позже.'); return; }
+    try {
+      const sb = getAuthedClient(auth.accessToken);
+      const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const { count } = await sb.from('listings').select('id', { count: 'exact', head: true }).eq('owner_id', auth.userId).gte('created_at', since);
+      if ((count ?? 0) >= 10) { setError('Максимум 10 объявлений за 24 часа. Попробуйте позже.'); return; }
 
-    setError('');
-    const row: Record<string, unknown> = {
-      listing_type: listingType,
-      title: title.slice(0, 200),
-      district: district.slice(0, 100),
-      rooms: Math.max(1, parseInt(rooms) || 1),
-      price: Math.round(Number(price)),
-      owner_id: auth.userId,
-      image_url: imageUrls[0] ?? null,
-      image_urls: imageUrls,
-    };
-    if (phone.trim()) row.phone = phone.trim().slice(0, 30);
-    if (agency.trim()) row.agency = agency.trim().slice(0, 100);
-    if (Array.isArray(coordsResult)) { row.latitude = coordsResult[0]; row.longitude = coordsResult[1]; }
+      setError('');
+      const row: Record<string, unknown> = {
+        listing_type: listingType,
+        title: title.slice(0, 200),
+        district: district.slice(0, 100),
+        rooms: Math.max(1, parseInt(rooms) || 1),
+        price: Math.round(Number(price)),
+        owner_id: auth.userId,
+        image_url: imageUrls[0] ?? null,
+        image_urls: imageUrls,
+      };
+      if (phone.trim()) row.phone = phone.trim().slice(0, 30);
+      if (agency.trim()) row.agency = agency.trim().slice(0, 100);
+      if (Array.isArray(coordsResult)) { row.latitude = coordsResult[0]; row.longitude = coordsResult[1]; }
 
-    const { error: insertError } = await sb.from('listings').insert(row);
-    setSubmitting(false);
-    if (insertError) { setError('Не удалось сохранить объявление. Попробуйте ещё раз.'); return; }
-    setSuccess('Объявление опубликовано.');
-    setTimeout(() => router.push('/my-listings'), 1500);
+      const { error: insertError } = await sb.from('listings').insert(row);
+      if (insertError) { setError('Не удалось сохранить объявление. Попробуйте ещё раз.'); return; }
+      setSuccess('Объявление опубликовано.');
+      setTimeout(() => router.push('/my-listings'), 1500);
+    } catch { setError('Произошла ошибка. Попробуйте снова.'); }
+    finally { setSubmitting(false); }
   }
 
   return (

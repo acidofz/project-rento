@@ -1,4 +1,6 @@
-import Link from 'next/link';
+'use client';
+
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Listing } from '@/lib/types';
 import { formatPriceUzs } from '@/lib/utils';
@@ -11,11 +13,13 @@ interface ListingCardProps {
 }
 
 export function ListingCard({ listing, isFavorite, onToggleFavorite, roomsSuffix = 'комн.' }: ListingCardProps) {
+  const router = useRouter();
+
   return (
-    <Link
-      href={`/listing/${listing.id}`}
+    <div
+      onClick={() => router.push(`/listing/${listing.id}`)}
       className={[
-        'block rounded-xl border bg-white overflow-hidden shadow-sm cursor-pointer',
+        'rounded-xl border bg-white overflow-hidden shadow-sm cursor-pointer',
         'transition-all duration-200 hover:-translate-y-1 hover:shadow-lg',
         listing.is_premium ? 'border-amber-300/60' : 'border-gray-100',
       ].join(' ')}
@@ -40,6 +44,11 @@ export function ListingCard({ listing, isFavorite, onToggleFavorite, roomsSuffix
         {listing.is_premium && (
           <span className="absolute top-2 left-2 bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
             ★ PREMIUM
+          </span>
+        )}
+        {(listing.image_urls?.length ?? 0) > 1 && (
+          <span className="absolute bottom-2 right-2 bg-black/50 text-white text-[10px] font-medium px-1.5 py-0.5 rounded-full">
+            {listing.image_urls.length} фото
           </span>
         )}
       </div>
@@ -85,7 +94,7 @@ export function ListingCard({ listing, isFavorite, onToggleFavorite, roomsSuffix
             )}
             {onToggleFavorite && (
               <button
-                onClick={() => onToggleFavorite(listing.id)}
+                onClick={(e) => { e.stopPropagation(); onToggleFavorite(listing.id); }}
                 className={`ml-1 p-1 rounded-lg transition-colors ${isFavorite ? 'text-red-500 hover:text-red-600' : 'text-gray-300 hover:text-red-400'}`}
                 title={isFavorite ? 'Убрать из избранного' : 'В избранное'}
               >
@@ -97,6 +106,6 @@ export function ListingCard({ listing, isFavorite, onToggleFavorite, roomsSuffix
           </div>
         </div>
       </div>
-    </Link>
+    </div>
   );
 }
