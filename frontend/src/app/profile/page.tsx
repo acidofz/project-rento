@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { useLang } from '@/contexts/LangContext';
-import { getAuthedClient } from '@/lib/supabase';
+import { getAuthedClient, getSupabase } from '@/lib/supabase';
 
 export default function ProfilePage() {
   const { t } = useLang();
@@ -14,25 +14,25 @@ export default function ProfilePage() {
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [listingCount, setListingCount] = useState<number | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
     if (!auth.isLoggedIn || !auth.accessToken || !auth.userId) return;
     const sb = getAuthedClient(auth.accessToken);
-    sb.from('profiles')
-      .select('first_name,last_name,phone')
-      .eq('id', auth.userId)
-      .limit(1)
-      .single()
-      .then(({ data }) => {
-        if (data) {
-          setFirstName((data.first_name as string | null) ?? '');
-          setLastName((data.last_name as string | null) ?? '');
-          setPhone((data.phone as string | null) ?? '');
-        }
-        setLoading(false);
-      });
+    Promise.all([
+      sb.from('profiles').select('first_name,last_name,phone').eq('id', auth.userId).limit(1).single(),
+      getSupabase().from('listings').select('id', { count: 'exact', head: true }).eq('owner_id', auth.userId),
+    ]).then(([profileRes, countRes]) => {
+      if (profileRes.data) {
+        setFirstName((profileRes.data.first_name as string | null) ?? '');
+        setLastName((profileRes.data.last_name as string | null) ?? '');
+        setPhone((profileRes.data.phone as string | null) ?? '');
+      }
+      setListingCount(countRes.count ?? 0);
+      setLoading(false);
+    });
   }, [auth.isLoggedIn, auth.accessToken, auth.userId]);
 
   async function handleSave(e: React.FormEvent) {
@@ -75,6 +75,16 @@ export default function ProfilePage() {
           )}
         </div>
       </div>
+
+      {/* Stats */}
+      {listingCount !== null && (
+        <div className="bg-white rounded-2xl border border-gray-200 p-4 flex items-center gap-4">
+          <div className="text-center flex-1">
+            <div className="text-2xl font-extrabold text-teal-700">{listingCount}</div>
+            <div className="text-xs text-gray-500 mt-0.5">объявлений</div>
+          </div>
+        </div>
+      )}
 
       {/* Edit form */}
       <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4">

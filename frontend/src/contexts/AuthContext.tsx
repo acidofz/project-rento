@@ -23,10 +23,16 @@ interface AuthSession {
   isBlocked: boolean;
 }
 
+interface ProfileExtra {
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+}
+
 interface AuthContextValue extends AuthSession {
   loading: boolean;
   login: (email: string, password: string) => Promise<string | null>;
-  register: (email: string, password: string) => Promise<string | null>;
+  register: (email: string, password: string, extra?: ProfileExtra) => Promise<string | null>;
   logout: () => Promise<void>;
   reload: () => Promise<void>;
 }
@@ -60,12 +66,16 @@ function humanizeAuthError(exc: unknown, action: string): string {
   return `Не удалось выполнить ${action}. Проверьте данные и попробуйте снова.`;
 }
 
-async function upsertProfile(userId: string, email: string, accessToken: string) {
+async function upsertProfile(userId: string, email: string, accessToken: string, extra?: ProfileExtra) {
   const { getAuthedClient } = await import('@/lib/supabase');
   const sb = getAuthedClient(accessToken);
   const username = (email.split('@')[0] ?? '').trim() || 'user';
+  const row: Record<string, unknown> = { id: userId, email, username };
+  if (extra?.firstName?.trim()) row.first_name = extra.firstName.trim().slice(0, 50);
+  if (extra?.lastName?.trim()) row.last_name = extra.lastName.trim().slice(0, 50);
+  if (extra?.phone?.trim()) row.phone = extra.phone.trim().slice(0, 30);
   try {
-    await sb.from('profiles').upsert({ id: userId, email, username }, { onConflict: 'id' });
+    await sb.from('profiles').upsert(row, { onConflict: 'id' });
   } catch { /* ignore */ }
 }
 
@@ -172,7 +182,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [applySession]);
 
-  const register = useCallback(async (email: string, password: string): Promise<string | null> => {
+  const register = useCallback(async (email: string, password: string, extra?: ProfileExtra): Promise<string | null> => {
     if (!email || !password) return 'Заполните email и пароль.';
     if (password.length < 6) return 'Пароль должен содержать не менее 6 символов.';
     const sb = getSupabase();
@@ -180,7 +190,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data, error } = await sb.auth.signUp({ email, password });
       if (error || !data.user) return humanizeAuthError(error, 'регистрации');
       if (data.session) {
-        await upsertProfile(data.user.id, data.user.email ?? '', data.session.access_token);
+        await upsertProfile(data.user.id, data.user.email ?? '', data.session.access_token, extra);
         await applySession(data.session.access_token, data.session.refresh_token ?? '', data.user.id, data.user.email ?? '');
         return null;
       }

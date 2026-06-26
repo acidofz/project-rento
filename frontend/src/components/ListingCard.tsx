@@ -12,9 +12,10 @@ interface ListingCardProps {
 
 export function ListingCard({ listing, isFavorite, onToggleFavorite, roomsSuffix = 'комн.' }: ListingCardProps) {
   return (
-    <div
+    <Link
+      href={`/listing/${listing.id}`}
       className={[
-        'rounded-xl border bg-white overflow-hidden shadow-sm',
+        'block rounded-xl border bg-white overflow-hidden shadow-sm cursor-pointer',
         'transition-all duration-200 hover:-translate-y-1 hover:shadow-lg',
         listing.is_premium ? 'border-amber-300/60' : 'border-gray-100',
       ].join(' ')}
@@ -45,12 +46,9 @@ export function ListingCard({ listing, isFavorite, onToggleFavorite, roomsSuffix
 
       {/* Content */}
       <div className="p-3 space-y-1.5">
-        <Link
-          href={`/listing/${listing.id}`}
-          className="block font-bold text-sm text-gray-900 leading-snug hover:text-teal-700 transition-colors line-clamp-2"
-        >
+        <div className="font-bold text-sm text-gray-900 leading-snug line-clamp-2">
           {listing.title}
-        </Link>
+        </div>
 
         <div className="flex items-center gap-1 text-xs text-gray-500 flex-wrap">
           <svg className="w-3 h-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -99,6 +97,6 @@ export function ListingCard({ listing, isFavorite, onToggleFavorite, roomsSuffix
           </div>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }

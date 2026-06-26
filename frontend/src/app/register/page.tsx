@@ -12,6 +12,9 @@ export default function RegisterPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [phone, setPhone] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -25,7 +28,11 @@ export default function RegisterPage() {
     setSubmitting(true);
     setError('');
     setMessage('');
-    const result = await register(email, password);
+    const result = await register(email, password, {
+      firstName: firstName.trim() || undefined,
+      lastName: lastName.trim() || undefined,
+      phone: phone.trim() || undefined,
+    });
     if (!result) {
       router.replace('/');
     } else if (result.includes('email') || result.includes('Подтверди')) {
@@ -49,6 +56,29 @@ export default function RegisterPage() {
           {message && <div className="p-3 rounded-lg bg-teal-50 border border-teal-200 text-sm text-teal-700">{message}</div>}
 
           <form onSubmit={handleSubmit} className="space-y-3">
+            {/* Name fields */}
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value.slice(0, 50))}
+                placeholder="Имя"
+                className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+              />
+              <input
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value.slice(0, 50))}
+                placeholder="Фамилия"
+                className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+              />
+            </div>
+            <input
+              value={phone}
+              onChange={(e) => setPhone(e.target.value.slice(0, 30))}
+              placeholder="Телефон (необязательно)"
+              type="tel"
+              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+            />
+            <div className="border-t border-gray-100 pt-1" />
             <input
               type="email"
               value={email}

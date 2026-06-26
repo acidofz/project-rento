@@ -167,6 +167,16 @@ export function ListingDetailClient({ listing }: Props) {
               {isFavorite ? t('detail_fav_remove') : t('detail_fav_add')}
             </button>
 
+            <Link
+              href={`/profile/${listing.owner_id}`}
+              className="flex items-center gap-1.5 px-4 py-2 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              Профиль продавца
+            </Link>
+
             {listing.latitude != null && listing.longitude != null && (
               <button
                 onClick={() => router.push(`/map?focus=${listing.id}`)}
